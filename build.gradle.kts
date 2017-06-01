@@ -1,8 +1,11 @@
+
 import com.gradle.publish.PluginBundleExtension
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.script.lang.kotlin.*
 
 group = "firebase.test.lab"
-version = "0.0.2"
+version = "0.0.2.2"
 
 buildscript {
     repositories {
@@ -21,6 +24,7 @@ apply {
     plugin("kotlin")
     plugin("maven")
     plugin("com.gradle.plugin-publish")
+    plugin("maven-publish")
 }
 
 repositories {
@@ -41,6 +45,18 @@ configure<PluginBundleExtension> {
         }
     }
 }
+
+configure<PublishingExtension> {
+    this.publications {
+        create<MavenPublication>("local"){
+            from(components.getByName("java"))
+        }
+    }
+    this.repositories {
+        mavenLocal()
+    }
+}
+
 
 dependencies {
     compile(gradleApi())
