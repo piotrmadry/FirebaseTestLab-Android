@@ -1,51 +1,58 @@
-buildscript {
-    repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.0'
-        classpath "com.gradle.publish:plugin-publish-plugin:0.9.7"
-    }
-}
-apply plugin: "com.gradle.plugin-publish"
-apply plugin: 'groovy'
-
-dependencies {
-    compile gradleApi()
-    compile localGroovy()
-    testCompile 'junit:junit:4.12'
-}
-
-apply plugin: 'maven'
-
-repositories {
-    mavenCentral()
-    jcenter()
-}
-
-group = 'firebase.test.lab'
-version = '0.0.1'
-
-pluginBundle {
-    website = 'https://github.com/piotrmadry/firebase-test-lab-gradle-plugin'
-    vcsUrl = 'https://github.com/piotrmadry/firebase-test-lab-gradle-plugin.git'
-    description = 'Gradle plugin for Android Test Lab'
-    tags = ['firebase', 'test-lab', 'espresso', 'instrumental-tests', 'groovy', 'android']
-
-    plugins {
-        FirebaseTestLabPlugin {
-            id = 'firebase.test.lab'
-            displayName = 'Gradle Firebase Test Lab Plugin'
-        }
-    }
-}
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            repository(url: "file:///Users/piotrmadry/Appunite/android-test-lab-plugin")
-        }
-    }
-}
+//buildscript {
+//    ext.kotlin_version = '1.1.2'
+//    repositories {
+//        maven {
+//            url "https://plugins.gradle.org/m2/"
+//        }
+//        mavenCentral()
+//    }
+//    dependencies {
+//        classpath 'com.android.tools.build:gradle:2.3.0'
+//        classpath "com.gradle.publish:plugin-publish-plugin:0.9.7"
+//        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+//    }
+//}
+//apply plugin: "com.gradle.plugin-publish"
+//apply plugin: 'kotlin'
+//apply plugin: 'groovy'
+//apply plugin: 'java'
+//
+//dependencies {
+//    compile gradleApi()
+//    compile localGroovy()
+////    compile gradleScriptKotlinApi()
+//    testCompile 'junit:junit:4.12'
+//    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+//}
+//
+//apply plugin: 'maven'
+//
+//repositories {
+//    mavenCentral()
+//    jcenter()
+//}
+//
+//group = 'firebase.test.lab'
+//version = '0.0.1'
+//
+//pluginBundle {
+//    website = 'https://github.com/piotrmadry/firebase-test-lab-gradle-plugin'
+//    vcsUrl = 'https://github.com/piotrmadry/firebase-test-lab-gradle-plugin.git'
+//    description = 'Gradle plugin for Android Test Lab'
+//    tags = ['firebase', 'test-lab', 'espresso', 'instrumental-tests', 'groovy', 'android']
+//
+//    plugins {
+//        FirebaseTestLabPlugin {
+//            id = 'firebase.test.lab'
+//            displayName = 'Gradle Firebase Test Lab Plugin'
+//        }
+//    }
+//}
+//
+//uploadArchives {
+//    repositories {
+//        mavenDeployer {
+//            repository(url: "file:///Users/piotrmadry/Appunite/android-test-lab-plugin")
+//        }
+//    }
+//}
