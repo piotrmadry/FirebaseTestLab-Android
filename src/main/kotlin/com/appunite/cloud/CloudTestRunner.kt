@@ -21,9 +21,10 @@ internal class CloudTestRunner(val cloudBucketName: String,
      */
     private val processCreator = ProcessBuilder("""
         ${command("gcloud", cloudSdkPath)}
-                beta test android run
+                firebase test android run
                 --format json
                 --results-bucket $cloudBucketName
+                --results-dir ui-tests
                 --type $testType
                 --locales ${platform.locales.joinArgs()},
                 --os-version-ids ${platform.androidApiLevels.joinArgs()}

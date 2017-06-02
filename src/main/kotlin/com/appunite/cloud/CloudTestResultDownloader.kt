@@ -13,6 +13,7 @@ class CloudTestResultDownloader(val artifacts: List<String>,
                                 val destinationDir: File,
                                 val cloudSdkPath: File,
                                 val cloudBucketName: String,
+                                val subDir: String,
                                 val testResults: TestResults,
                                 val logger: Logger) {
     init {
@@ -25,13 +26,13 @@ class CloudTestResultDownloader(val artifacts: List<String>,
             return
         }
 
-        getResultDirs().forEach { resultsDir ->
-            logger.lifecycle("Downloading results from $resultsDir")
-            val destination = "$destinationDir/${resultsDir.split("/").last()}"
-            prepareDestination(destination)
-            artifacts.forEach { resource ->
-                downloadResource("$resultsDir$resource", destination)
-            }
+        val resultsDir = getResultDirs()
+        logger.lifecycle("Downloading results from $resultsDir")
+        val destination = "$destinationDir/$resultsDir/$subDir"
+        prepareDestination(destination)
+        artifacts.forEach { resource ->
+            logger.lifecycle("Downloading artifacts" + resource)
+            downloadResource("$resultsDir/$subDir/$resource", destination)
         }
         logger.lifecycle("Artifacts downloaded")
     }
@@ -62,14 +63,15 @@ class CloudTestResultDownloader(val artifacts: List<String>,
                 .waitFor() == 0
     }
 
-    private fun getResultDirs() =
-            "${command("gsutil", cloudSdkPath)} ls gs://$cloudBucketName/${testResults.resultDir}"
-                    .startCommand()
-                    .apply {
-                        errorStream.bufferedReader().forEachLine { logger.error("getResultDir " + it) }
-                    }
-                    .inputStream
-                    .bufferedReader()
-                    .readLines()
-                    .filter { it.endsWith("/") }
+    private fun getResultDirs() = "ui-tests"
+//            "${command("gsutil", cloudSdkPath)} ls gs://$cloudBucketName/${testResults.resultDir}"
+//                    .startCommand()
+//                    .apply {
+//                        errorStream.bufferedReader().forEachLine { logger.error("getResultDir " + it) }
+//                    }
+//                    .inputStream
+//                    .bufferedReader()
+//                    .readLines()
+//                    .filter { it.endsWith("/") }
+
 }
