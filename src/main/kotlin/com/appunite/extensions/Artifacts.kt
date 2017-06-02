@@ -12,13 +12,12 @@ interface Artifacts {
     fun getArtifactPaths(): List<String>
 }
 
-@Suppress("unused")
 class ArtifactsImpl : Artifacts {
+
     override var junit by PathBoolean("test_result_*.xml", true)
     override var logcat by PathBoolean("logcat")
     override var video by PathBoolean("video.mp4")
     override var instrumentation by PathBoolean("instrumentation.results")
-
     override fun getArtifactPaths() = paths.toList()
 
     private val paths = mutableListOf<String>()

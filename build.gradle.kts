@@ -5,7 +5,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.script.lang.kotlin.*
 
 group = "firebase.test.lab"
-version = "0.0.2.2"
+version = "0.0.2.3"
 
 buildscript {
     repositories {
@@ -62,6 +62,6 @@ dependencies {
     compile(gradleApi())
     compile(kotlinModule("stdlib", "1.1.2"))
     compile(gradleScriptKotlinApi())
-    compileOnly("com.android.tools.build:gradle:2.2.3")
+    compile("com.android.tools.build:gradle:2.2.3")
     testCompile("junit:junit:4.11")
 }

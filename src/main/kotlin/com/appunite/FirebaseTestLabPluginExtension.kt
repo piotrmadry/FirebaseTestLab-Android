@@ -12,7 +12,7 @@ open class FirebaseTestLabPluginExtension(private val project: Project){
     var cloudBucketName: String = ""
     var ignoreFailures: Boolean = false
     var enableVariantLessTasks = false
-    val platforms = project.container(Platform::class.java)
+    val platforms = project.container(Platform::class.java)!!
     val artifacts: Artifacts = ArtifactsImpl()
 
     fun downloadArtifact(configure: Artifacts.() -> Unit) {
