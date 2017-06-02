@@ -1,6 +1,7 @@
 package com.appunite.cloud
 
 import com.appunite.extensions.TestResults
+import com.appunite.utils.Constants
 import com.appunite.utils.command
 import com.appunite.utils.startCommand
 import org.gradle.api.GradleException
@@ -20,26 +21,26 @@ class CloudTestResultDownloader(val artifacts: List<String>,
 
     private fun downloadResults() {
         if (artifacts.isEmpty()) {
-            logger.lifecycle("Artifacts downloading properties not configured")
+            logger.error(Constants.ARTIFACTS_NOT_CONFIGURED)
             return
         }
 
         getResultDirs().forEach { resultsDir ->
-            logger.debug("Downloading results from $resultsDir")
+            logger.lifecycle("Downloading results from $resultsDir")
             val destination = "$destinationDir/${resultsDir.split("/").last()}"
             prepareDestination(destination)
             artifacts.forEach { resource ->
                 downloadResource("$resultsDir$resource", destination)
             }
         }
-        logger.lifecycle("gcloud: Artifacts downloaded")
+        logger.lifecycle("Artifacts downloaded")
     }
 
     private fun prepareDestination(destPath: String) {
         val destination = File(destPath)
-        logger.debug("gcloud: Preparing destination dir $destination")
+        logger.lifecycle("Preparing destination dir $destination")
         if (destination.exists()) {
-            logger.debug("gcloud: Destination $destination is exists, delete recursively")
+            logger.lifecycle("Destination $destination is exists, delete recursively")
             if (!destination.isDirectory) {
                 throw GradleException("Destination path $destination is not directory")
             }
@@ -56,7 +57,7 @@ class CloudTestResultDownloader(val artifacts: List<String>,
                 .startCommand()
                 .apply {
                     inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
-                    errorStream.bufferedReader().forEachLine { logger.lifecycle(it) }
+                    errorStream.bufferedReader().forEachLine { logger.error("Download resources: " + it) }
                 }
                 .waitFor() == 0
     }
@@ -65,7 +66,7 @@ class CloudTestResultDownloader(val artifacts: List<String>,
             "${command("gsutil", cloudSdkPath)} ls gs://$cloudBucketName/${testResults.resultDir}"
                     .startCommand()
                     .apply {
-                        errorStream.bufferedReader().forEachLine { logger.error(it) }
+                        errorStream.bufferedReader().forEachLine { logger.error("getResultDir " + it) }
                     }
                     .inputStream
                     .bufferedReader()

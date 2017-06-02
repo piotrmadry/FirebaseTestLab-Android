@@ -11,6 +11,7 @@ import com.appunite.extensions.TestResults
 import com.appunite.extensions.TestType
 import com.appunite.utils.ApkSource
 import com.appunite.utils.BuildParameterApkSource
+import com.appunite.utils.Constants
 import com.appunite.utils.VariantApkSource
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -28,9 +29,13 @@ class FirebaseTestLabPlugin : Plugin<Project> {
     private lateinit var project: Project
     private lateinit var config: FirebaseTestLabPluginExtension
 
+    /**
+     * Create extension used to configure testing properties, platforms..
+     * After that @param[initConfig] check for required fields validity
+     * and throw @param[GradleException] if needed
+     */
     override fun apply(project: Project) {
         this.project = project
-
         project.extensions.create(
                 GRADLE_METHOD_NAME,
                 FirebaseTestLabPluginExtension::class.java,
@@ -44,36 +49,43 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
     private fun initConfig() {
         config = project.extensions.findByType(FirebaseTestLabPluginExtension::class.java).apply {
-            if (!File(cloudSdkPath, "gcloud").canExecute()) {
-                println("Cloud SDK Path not good")
+            if (!File(cloudSdkPath, Constants.GCLOUD).canExecute()) {
+                project.logger.lifecycle(Constants.CLOUD_SDK_NOT_FOUND_OR_REMOTE)
+            }
+            if (artifacts.getArtifactPaths().isEmpty()) {
+                project.logger.error(Constants.ARTIFACTS_NOT_CONFIGURED)
             }
             if (cloudBucketName.isNullOrBlank()) {
-                println("Bucket name is not good")
+                throw GradleException(Constants.BUCKET_NAME_INVALID)
             }
-
-            println("Paths: " + artifacts.getArtifactPaths())
         }
     }
 
+    /**
+     *
+     */
     private fun createTasks() {
         val platforms = config.platforms.toList()
-
         (project.extensions.findByName(ANDROID) as AppExtension).apply {
+            //Create tasks for every build variant e.g [DEBUG, RELEASE, STAGING]
             testVariants.forEach { variant ->
-                val apks = VariantApkSource(variant)
-
+                val variantApk = VariantApkSource(variant)
+                //Create tasks for every platform available on every build e.g [DebugNexus5, ReleaseNexus5]
                 platforms.forEach { platform ->
-                    createTask(TestType.instrumentation, platform, variant, apks)
-                    createTask(TestType.robo, platform, variant, apks)
+                    createTask(TestType.instrumentation, platform, variant, variantApk)
+                    createTask(TestType.robo, platform, variant, variantApk)
                 }
             }
         }
 
-        val apks = BuildParameterApkSource(project)
+        //Create tasks without building project
+        //It works only if you specify gradle build parameters -Papk and -PtestApk
+        //with proper paths to apk's
+        val variantApk = BuildParameterApkSource(project)
         if (config.enableVariantLessTasks) {
             platforms.forEach { platform ->
-                createTask(TestType.instrumentation, platform, null, apks)
-                createTask(TestType.robo, platform, null, apks)
+                createTask(TestType.instrumentation, platform, null, variantApk)
+                createTask(TestType.robo, platform, null, variantApk)
             }
         }
     }
@@ -82,12 +94,11 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             type: TestType,
             platform: Platform,
             variant: TestVariant?,
-            apks: ApkSource
-    ) {
+            apks: ApkSource) {
+
         val variantName = variant?.testedVariant?.name?.capitalize() ?: ""
-        project.logger.debug("Creating Firebase task for $variantName")
         project.task("test${variantName}${platform.name.capitalize()}${type.toString().capitalize()}TestLab", closureOf<Task> {
-            group = "Test Lab"
+            group = Constants.FIREBASE_TEST_LAB
             description = "Run ${type} tests " +
                     (if (variant == null) "" else "for the ${variantName} build ") +
                     "in Firebase Test Lab."
@@ -116,7 +127,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             project.logger.lifecycle(result.message)
         } else {
             if (ignoreFailures) {
-                project.logger.error(result.message)
+                project.logger.error(Constants.ERROR + result.message)
             } else {
                 throw GradleException(result.message)
             }
@@ -124,7 +135,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
     }
 
     private fun downloadArtifacts(result: TestResults) {
-        project.logger.lifecycle("Artifact downloading started")
+        project.logger.lifecycle(Constants.DOWNLOADING_ARTIFACTS_STARTED)
         CloudTestResultDownloader(
                 config.artifacts.getArtifactPaths(),
                 File(project.buildDir, RESULT_PATH),

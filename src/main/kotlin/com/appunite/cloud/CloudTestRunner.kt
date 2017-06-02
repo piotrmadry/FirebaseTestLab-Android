@@ -1,10 +1,7 @@
 package com.appunite.cloud
 
 import com.appunite.extensions.*
-import com.appunite.utils.ApkSource
-import com.appunite.utils.asCommand
-import com.appunite.utils.command
-import com.appunite.utils.joinArgs
+import com.appunite.utils.*
 import org.gradle.api.logging.Logger
 import java.io.File
 
@@ -48,9 +45,9 @@ internal class CloudTestRunner(val cloudBucketName: String,
             if (it.contains(cloudBucketName)) {
                 resultDir = "$cloudBucketName\\/(.*)\\/".toRegex().find(it)?.groups?.get(1)?.value
                 if (resultDir == null) {
-                    logger.error("Cannot achieve result dir name. Results will not be downloaded.")
+                    logger.error(Constants.ERROR + "Cannot achieve result dir name. Results will not be downloaded.")
                 } else {
-                    logger.debug("Target result dir name is $resultDir")
+                    logger.lifecycle("Target result dir name is $resultDir")
                 }
             }
         }
