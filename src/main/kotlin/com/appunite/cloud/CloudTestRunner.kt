@@ -1,7 +1,10 @@
 package com.appunite.cloud
 
 import com.appunite.extensions.*
-import com.appunite.utils.*
+import com.appunite.utils.ApkSource
+import com.appunite.utils.asCommand
+import com.appunite.utils.command
+import com.appunite.utils.joinArgs
 import org.gradle.api.logging.Logger
 import java.io.File
 
@@ -10,6 +13,7 @@ internal interface FirebaseTestLabRunner {
 }
 
 internal class CloudTestRunner(val cloudBucketName: String,
+                               val resultsTestDir: String,
                                val logger: Logger,
                                testType: TestType,
                                cloudSdkPath: File,
@@ -24,7 +28,7 @@ internal class CloudTestRunner(val cloudBucketName: String,
                 firebase test android run
                 --format json
                 --results-bucket $cloudBucketName
-                --results-dir ui-tests
+                --results-dir $resultsTestDir
                 --type $testType
                 --locales ${platform.locales.joinArgs()},
                 --os-version-ids ${platform.androidApiLevels.joinArgs()}
@@ -43,14 +47,14 @@ internal class CloudTestRunner(val cloudBucketName: String,
 
         process.errorStream.bufferedReader().forEachLine {
             logger.lifecycle(it)
-            if (it.contains(cloudBucketName)) {
-                resultDir = "$cloudBucketName\\/(.*)\\/".toRegex().find(it)?.groups?.get(1)?.value
-                if (resultDir == null) {
-                    logger.error(Constants.ERROR + "Cannot achieve result dir name. Results will not be downloaded.")
-                } else {
-                    logger.lifecycle("Target result dir name is $resultDir")
-                }
-            }
+//            if (it.contains(cloudBucketName)) {
+//                resultDir = "$cloudBucketName\\/(.*)\\/".toRegex().find(it)?.groups?.get(1)?.value
+//                if (resultDir == null) {
+//                    logger.error(Constants.ERROR + "Cannot achieve result dir name. Results will not be downloaded.")
+//                } else {
+//                    logger.lifecycle("Target result dir name is $resultDir")
+//                }
+//            }
         }
 
         process.inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }

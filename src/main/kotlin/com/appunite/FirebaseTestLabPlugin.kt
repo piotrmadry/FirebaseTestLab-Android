@@ -9,7 +9,10 @@ import com.appunite.cloud.CloudTestRunner
 import com.appunite.extensions.Platform
 import com.appunite.extensions.TestResults
 import com.appunite.extensions.TestType
-import com.appunite.utils.*
+import com.appunite.utils.ApkSource
+import com.appunite.utils.BuildParameterApkSource
+import com.appunite.utils.Constants
+import com.appunite.utils.VariantApkSource
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -54,6 +57,9 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             }
             if (cloudBucketName.isNullOrBlank()) {
                 throw GradleException(Constants.BUCKET_NAME_INVALID)
+            }
+            if (resultsTestDir.isNullOrEmpty()){
+                throw GradleException(Constants.RESULTS_TEST_DIR_NOT_VALID)
             }
         }
     }
@@ -133,17 +139,13 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
     private fun downloadArtifacts(result: TestResults, platform: Platform) {
         project.logger.lifecycle(Constants.DOWNLOADING_ARTIFACTS_STARTED)
-        val subDir = platform.deviceIds.joinArgsDir() + "-" +
-                platform.androidApiLevels.joinArgsDir() + "-" +
-                platform.locales.joinArgsDir() + "-" +
-                platform.orientations.joinArgsDir()
 
         CloudTestResultDownloader(
                 config.artifacts.getArtifactPaths(),
                 File(project.buildDir, RESULT_PATH),
                 File(config.cloudSdkPath),
                 config.cloudBucketName,
-                subDir,
+                config.resultsTestDir,
                 result,
                 project.logger)
     }
@@ -155,6 +157,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
     ): TestResults {
         return CloudTestRunner(
                 config.cloudBucketName,
+                config.resultsTestDir,
                 project.logger,
                 testType,
                 File(config.cloudSdkPath),

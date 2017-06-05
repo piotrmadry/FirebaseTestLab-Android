@@ -8,6 +8,7 @@ class Constants {
         val ARTIFACTS_NOT_CONFIGURED = "Your artifacts are not configured. Results will not be downloaded"
         val FIREBASE_TEST_LAB = "Firebase Test Lab"
         val ERROR = "Error: "
+        val RESULTS_TEST_DIR_NOT_VALID = "You need to specify dir name for your tests"
 
         val DOWNLOADING_ARTIFACTS_STARTED = "Artifact download started"
     }
