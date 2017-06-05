@@ -119,8 +119,9 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             }
             doLast {
                 val result = runTestLabTest(type, platform, apks)
+                project.logger.lifecycle("TEST RESULT DIRECTORY: " + result.resultDir)
                 processResult(result, config.ignoreFailures)
-                downloadArtifacts(result, platform)
+                downloadArtifacts(platform)
             }
         })
     }
@@ -137,7 +138,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         }
     }
 
-    private fun downloadArtifacts(result: TestResults, platform: Platform) {
+    private fun downloadArtifacts(platform: Platform) {
         project.logger.lifecycle(Constants.DOWNLOADING_ARTIFACTS_STARTED)
 
         CloudTestResultDownloader(
@@ -146,7 +147,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 File(config.cloudSdkPath),
                 config.cloudBucketName,
                 config.resultsTestDir,
-                result,
+                platform,
                 project.logger)
     }
 

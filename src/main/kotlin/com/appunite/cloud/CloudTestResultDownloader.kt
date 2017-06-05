@@ -1,6 +1,6 @@
 package com.appunite.cloud
 
-import com.appunite.extensions.TestResults
+import com.appunite.extensions.Platform
 import com.appunite.utils.Constants
 import com.appunite.utils.command
 import com.appunite.utils.startCommand
@@ -14,13 +14,14 @@ class CloudTestResultDownloader(val artifacts: List<String>,
                                 val cloudSdkPath: File,
                                 val cloudBucketName: String,
                                 val resultsTestDir: String,
-                                val testResults: TestResults,
+                                val platform: Platform,
                                 val logger: Logger) {
     init {
         downloadResults()
     }
 
     private fun downloadResults() {
+
         if (artifacts.isEmpty()) {
             logger.error(Constants.ARTIFACTS_NOT_CONFIGURED)
             return
@@ -30,7 +31,7 @@ class CloudTestResultDownloader(val artifacts: List<String>,
         prepareDestination(destination)
         artifacts.forEach { resource ->
             logger.lifecycle("Downloading artifacts" + resource)
-            downloadResource("$cloudBucketName/$resultsTestDir/*", destination)
+            downloadResource("$cloudBucketName/$resultsTestDir", destination)
         }
         logger.lifecycle("Artifacts downloaded")
     }
@@ -52,8 +53,9 @@ class CloudTestResultDownloader(val artifacts: List<String>,
     }
 
     private fun downloadResource(source: String, destination: String): Boolean {
-        logger.lifecycle("${command("gsutil", cloudSdkPath)} -m cp -r gs://$source $destination")
-        return "${command("gsutil", cloudSdkPath)} -m cp -r gs://$source $destination"
+        val excludeFiles = "-x \".*\\.txt$|.*\\.mp4$|.*\\.apk$|.*\\.results$|.*\\logcat$|.*\\.txt$\""
+        logger.lifecycle("${command("gsutil", cloudSdkPath)} -m rsync $excludeFiles -r gs://$source $destination")
+        return "${command("gsutil", cloudSdkPath)} -m rsync $excludeFiles -r -n gs://$source $destination"
                 .startCommand()
                 .apply {
                     inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }

@@ -5,7 +5,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.script.lang.kotlin.*
 
 group = "firebase.test.lab"
-version = "0.0.3.5"
+version = "0.0.4.5"
 
 buildscript {
     repositories {
