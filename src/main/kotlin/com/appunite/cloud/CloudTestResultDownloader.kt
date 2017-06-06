@@ -32,7 +32,7 @@ class CloudTestResultDownloader(val artifacts: Map<ArtifactType, Boolean>,
         val destination = File(destPath)
         destination.mkdirs()
         if (!destination.exists()) {
-            throw GradleException("Issue when tried to create destination dir $destination")
+            throw GradleException("Issue when creating destination dir $destination")
         }
     }
 
@@ -50,10 +50,10 @@ class CloudTestResultDownloader(val artifacts: Map<ArtifactType, Boolean>,
             }
         }
         excludeQuery.append(endQuery).toString()
-
-        val excludeFiles = "-x \".*\\.txt$|.*\\.mp4$|.*\\.apk$|.*\\.results$|.*\\logcat$|.*\\.txt$\""
-        logger.lifecycle("${command("gsutil", cloudSdkPath)} -m rsync $excludeFiles -r gs://$source $destination")
-        return "${command("gsutil", cloudSdkPath)} -m rsync $excludeQuery -r -n gs://$source $destination"
+//        TODO: Remove
+//        val excludeFiles = "-x \".*\\.txt$|.*\\.mp4$|.*\\.apk$|.*\\.results$|.*\\logcat$|.*\\.txt$\""
+        logger.lifecycle("${command("gsutil", cloudSdkPath)} -m rsync $excludeQuery -r gs://$source $destination")
+        return "${command("gsutil", cloudSdkPath)} -m rsync $excludeQuery -r gs://$source $destination"
                 .startCommand()
                 .apply {
                     inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }

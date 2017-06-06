@@ -11,7 +11,6 @@ import com.appunite.model.Platform
 import com.appunite.model.TestResults
 import com.appunite.model.TestType
 import com.appunite.utils.ApkSource
-import com.appunite.utils.BuildParameterApkSource
 import com.appunite.utils.Constants
 import com.appunite.utils.VariantApkSource
 import org.gradle.api.GradleException
@@ -35,7 +34,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
     /**
      * Create extension used to configure testing properties, platforms..
-     * After that @param[initConfig] check for required fields validity
+     * After that @param[setup] check for required fields validity
      * and throw @param[GradleException] if needed
      */
     override fun apply(project: Project) {
@@ -46,48 +45,32 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 project)
 
         project.afterEvaluate {
-            initConfig()
+            setup()
             createTasks()
             testingTask()
         }
     }
 
-    private fun initConfig() {
+    private fun setup() {
         config = project.extensions.findByType(FirebaseTestLabPluginExtension::class.java).apply {
             artifactsToExcludeMap = this.artifacts.getArtifactsMap().filterValues { it == false }
         }
-
         downloader = CloudTestResultDownloader(artifactsToExcludeMap, File(project.buildDir, RESULT_PATH),
                 File(config.cloudSdkPath), config.cloudBucketName, config.resultsTestDir, project.logger)
     }
 
-    /**
-     *
-     */
     private fun createTasks() {
         val platforms = config.platforms.toList()
         (project.extensions.findByName(ANDROID) as AppExtension).apply {
-            //Create tasks for every build variant e.g [DEBUG, RELEASE, STAGING]
-            testVariants.forEach { variant ->
-                val variantApk = VariantApkSource(variant)
-                //Create tasks for every platform available on every build e.g [DebugNexus5, ReleaseNexus5]
-                platforms.forEach { platform ->
-                    createTask(TestType.instrumentation, platform, variant, variantApk)
-                    createTask(TestType.robo, platform, variant, variantApk)
-                }
-            }
+            val debugVariant = testVariants.toList()[0]
+            val variantApk = VariantApkSource(debugVariant)
+            createTestLabTask(TestType.instrumentation, platforms, debugVariant, variantApk)
+//            platforms.forEach { platform ->
+//                createTask(TestType.instrumentation, platform, variant, variantApk)
+//                createTask(TestType.robo, platform, variant, variantApk)
+//            }
         }
 
-        //Create tasks without building project
-        //It works only if you specify gradle build parameters -Papk and -PtestApk
-        //with proper paths to apk's
-        val variantApk = BuildParameterApkSource(project)
-        if (config.enableVariantLessTasks) {
-            platforms.forEach { platform ->
-                createTask(TestType.instrumentation, platform, null, variantApk)
-                createTask(TestType.robo, platform, null, variantApk)
-            }
-        }
     }
 
     private fun createTask(
@@ -116,11 +99,35 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             }
             doLast {
                 val result = runTestLabTest(type, platform, apks)
-                project.logger.lifecycle("TEST RESULT DIRECTORY: " + result.resultDir)
                 processResult(result, config.ignoreFailures)
                 downloader.fetchArtifacts()
             }
         })
+    }
+
+    private fun createTestLabTask(testType: TestType,
+                                  platforms: List<Platform>,
+                                  variant: TestVariant,
+                                  apkSource: ApkSource) {
+        val variantName = variant.testedVariant?.name?.capitalize() ?: ""
+
+        project.task("RunFirebaseTestLab", closureOf<Task> {
+            group = Constants.FIREBASE_TEST_LAB
+            description = "Run Instrumental tests in Firebase Test Lab"
+
+            dependsOn(* when (testType) {
+                TestType.instrumentation -> arrayOf("assemble${variantName}", "assemble${variant.name.capitalize()}")
+                TestType.robo -> arrayOf("assemble${variantName}")
+            })
+            doLast {
+                platforms.forEach { platform ->
+                    val result = runTestLabTest(testType, platform, apkSource)
+                    processResult(result, config.ignoreFailures)
+                }
+                downloader.fetchArtifacts()
+            }
+        })
+
     }
 
     private fun testingTask() {
@@ -138,7 +145,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 val endQuery = "|.*\\.txt$\""
                 val excludeQuery = StringBuilder().append(startQuery)
                 artifactsToExcludeMap.keys.forEach { key ->
-                    when (key){
+                    when (key) {
                         ArtifactType.VIDEO -> excludeQuery.append("|.*\\.mp4$")
                         ArtifactType.XML -> excludeQuery.append("|.*\\.results$")
                         ArtifactType.LOGCAT -> excludeQuery.append("|.*\\logcat$")
