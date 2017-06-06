@@ -10,8 +10,8 @@ open class FirebaseTestLabPluginExtension(val project: Project) {
     var cloudSdkPath: String = ""
     var cloudBucketName: String = ""
     var resultsTestDir = ""
+    var resultsDestinationPath = project.buildDir.toString()
     var ignoreFailures: Boolean = false
-    var enableVariantLessTasks = false
     val platforms = project.container(Platform::class.java)!!
     val artifacts :Artifacts = Artifacts()
 

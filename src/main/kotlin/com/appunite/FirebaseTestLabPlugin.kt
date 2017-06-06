@@ -56,7 +56,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         config = project.extensions.findByType(FirebaseTestLabPluginExtension::class.java).apply {
             artifactsToExcludeMap = this.artifacts.getArtifactsMap().filterValues { it == false }
         }
-        downloader = CloudTestResultDownloader(artifactsToExcludeMap, File(project.buildDir, RESULT_PATH),
+        downloader = CloudTestResultDownloader(artifactsToExcludeMap, File(config.resultsDestinationPath, RESULT_PATH),
                 File(config.cloudSdkPath), config.cloudBucketName, config.resultsTestDir, project.logger)
     }
 
@@ -112,6 +112,9 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         }
         if (config.ignoreFailures) {
             project.logger.warn(Constants.IGNORE_FAUILURE_ENABLED)
+        }
+        if (config.resultsDestinationPath != project.buildDir.toString()){
+            project.logger.warn("Please be sure that this path is correctly")
         }
     }
 
