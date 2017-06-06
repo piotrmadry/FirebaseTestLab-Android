@@ -25,6 +25,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
     private val GRADLE_METHOD_NAME = "FirebaseTestLabConfig"
     private val ANDROID = "android"
     private val RESULT_PATH = "reports/firebase-test-lab"
+    private val TASK_NAME = "uploadTestLab"
 
     private lateinit var project: Project
     private lateinit var config: FirebaseTestLabPluginExtension
@@ -65,44 +66,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             val debugVariant = testVariants.toList()[0]
             val variantApk = VariantApkSource(debugVariant)
             createTestLabTask(TestType.instrumentation, platforms, debugVariant, variantApk)
-//            platforms.forEach { platform ->
-//                createTask(TestType.instrumentation, platform, variant, variantApk)
-//                createTask(TestType.robo, platform, variant, variantApk)
-//            }
         }
-
-    }
-
-    private fun createTask(
-            type: TestType,
-            platform: Platform,
-            variant: TestVariant?,
-            apks: ApkSource) {
-
-        val variantName = variant?.testedVariant?.name?.capitalize() ?: ""
-        project.task("test${variantName}${platform.name.capitalize()}${type.toString().capitalize()}TestLab", closureOf<Task> {
-            group = Constants.FIREBASE_TEST_LAB
-            description = "Run ${type} tests " +
-                    (if (variant == null) "" else "for the ${variantName} build ") +
-                    "in Firebase Test Lab."
-            if (variant == null) {
-                description += "\nTo run test for your matrix without build project" +
-                        " you must specify paths to apk and test apk using parameters -Papk and -PtestApk"
-            }
-            //Add dependencies on assemble tasks of application and tests
-            //But only for "variant" builds,
-            if (variant != null) {
-                dependsOn(*when (type) {
-                    TestType.instrumentation -> arrayOf("assemble${variantName}", "assemble${variant.name.capitalize()}")
-                    TestType.robo -> arrayOf("assemble${variantName}")
-                })
-            }
-            doLast {
-                val result = runTestLabTest(type, platform, apks)
-                processResult(result, config.ignoreFailures)
-                downloader.fetchArtifacts()
-            }
-        })
     }
 
     private fun createTestLabTask(testType: TestType,
@@ -111,7 +75,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                                   apkSource: ApkSource) {
         val variantName = variant.testedVariant?.name?.capitalize() ?: ""
 
-        project.task("RunFirebaseTestLab", closureOf<Task> {
+        project.task(TASK_NAME, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB
             description = "Run Instrumental tests in Firebase Test Lab"
 
@@ -127,7 +91,26 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 downloader.fetchArtifacts()
             }
         })
+    }
 
+    private fun processResult(result: TestResults, ignoreFailures: Boolean) {
+        if (result.isSuccessful) {
+            project.logger.lifecycle(result.message)
+        } else {
+            if (ignoreFailures) {
+                project.logger.error(Constants.ERROR + result.message)
+            } else {
+                throw GradleException(result.message)
+            }
+        }
+    }
+
+    private fun runTestLabTest(
+            testType: TestType,
+            platform: Platform,
+            apkSource: ApkSource): TestResults {
+        return CloudTestRunner(config.cloudBucketName, config.resultsTestDir, project.logger,
+                testType, File(config.cloudSdkPath), platform, apkSource).run()
     }
 
     private fun testingTask() {
@@ -159,32 +142,5 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
             }
         })
-    }
-
-    private fun processResult(result: TestResults, ignoreFailures: Boolean) {
-        if (result.isSuccessful) {
-            project.logger.lifecycle(result.message)
-        } else {
-            if (ignoreFailures) {
-                project.logger.error(Constants.ERROR + result.message)
-            } else {
-                throw GradleException(result.message)
-            }
-        }
-    }
-
-    private fun runTestLabTest(
-            testType: TestType,
-            platform: Platform,
-            apks: ApkSource
-    ): TestResults {
-        return CloudTestRunner(
-                config.cloudBucketName,
-                config.resultsTestDir,
-                project.logger,
-                testType,
-                File(config.cloudSdkPath),
-                platform,
-                apks).run()
     }
 }
