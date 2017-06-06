@@ -1,6 +1,5 @@
 package com.appunite.cloud
 
-import com.appunite.extensions.Platform
 import com.appunite.utils.Constants
 import com.appunite.utils.command
 import com.appunite.utils.startCommand
@@ -14,7 +13,6 @@ class CloudTestResultDownloader(val artifacts: List<String>,
                                 val cloudSdkPath: File,
                                 val cloudBucketName: String,
                                 val resultsTestDir: String,
-                                val platform: Platform,
                                 val logger: Logger) {
     init {
         downloadResults()
@@ -26,7 +24,9 @@ class CloudTestResultDownloader(val artifacts: List<String>,
             logger.error(Constants.ARTIFACTS_NOT_CONFIGURED)
             return
         }
+
         logger.lifecycle("Downloading results from $resultsTestDir")
+
         val destination = "$destinationDir/$resultsTestDir"
         prepareDestination(destination)
         artifacts.forEach { resource ->
@@ -53,6 +53,7 @@ class CloudTestResultDownloader(val artifacts: List<String>,
     }
 
     private fun downloadResource(source: String, destination: String): Boolean {
+        //TODO: Remove -n and leave comment about first and last files to exclude
         val excludeFiles = "-x \".*\\.txt$|.*\\.mp4$|.*\\.apk$|.*\\.results$|.*\\logcat$|.*\\.txt$\""
         logger.lifecycle("${command("gsutil", cloudSdkPath)} -m rsync $excludeFiles -r gs://$source $destination")
         return "${command("gsutil", cloudSdkPath)} -m rsync $excludeFiles -r -n gs://$source $destination"
