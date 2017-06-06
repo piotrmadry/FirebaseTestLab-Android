@@ -1,5 +1,6 @@
 package com.appunite.cloud
 
+import com.appunite.model.ArtifactType
 import com.appunite.utils.Constants
 import com.appunite.utils.command
 import com.appunite.utils.startCommand
@@ -8,7 +9,7 @@ import org.gradle.api.logging.Logger
 import java.io.File
 
 
-class CloudTestResultDownloader(val artifacts: Map<String, Boolean>,
+class CloudTestResultDownloader(val artifacts: Map<ArtifactType, Boolean>,
                                 val destinationDir: File,
                                 val cloudSdkPath: File,
                                 val cloudBucketName: String,
@@ -24,7 +25,7 @@ class CloudTestResultDownloader(val artifacts: Map<String, Boolean>,
         val sourcePath = "$cloudBucketName/$resultsTestDir"
 
         prepareDestination(destinationPath)
-        downloadResource(sourcePath, destinationPath)
+        downloadResource(sourcePath, destinationPath, artifacts)
     }
 
     private fun prepareDestination(destPath: String) {
@@ -35,11 +36,24 @@ class CloudTestResultDownloader(val artifacts: Map<String, Boolean>,
         }
     }
 
-    private fun downloadResource(source: String, destination: String): Boolean {
+    private fun downloadResource(source: String, destination: String, artifacts: Map<ArtifactType, Boolean>): Boolean {
         //TODO: Remove -n and leave comment about first and last files to exclude
+        val startQuery = "-x \".*\\.txt$|.*\\.apk$"
+        val endQuery = "|.*\\.txt$\""
+        val excludeQuery = StringBuilder().append(startQuery)
+        artifacts.keys.forEach { key ->
+            when (key){
+                ArtifactType.VIDEO -> excludeQuery.append("|.*\\.mp4$")
+                ArtifactType.XML -> excludeQuery.append("|.*\\.results$")
+                ArtifactType.LOGCAT -> excludeQuery.append("|.*\\logcat$")
+                ArtifactType.JUNIT -> excludeQuery.append("|.*\\.xml$")
+            }
+        }
+        excludeQuery.append(endQuery).toString()
+
         val excludeFiles = "-x \".*\\.txt$|.*\\.mp4$|.*\\.apk$|.*\\.results$|.*\\logcat$|.*\\.txt$\""
         logger.lifecycle("${command("gsutil", cloudSdkPath)} -m rsync $excludeFiles -r gs://$source $destination")
-        return "${command("gsutil", cloudSdkPath)} -m rsync $excludeFiles -r -n gs://$source $destination"
+        return "${command("gsutil", cloudSdkPath)} -m rsync $excludeQuery -r -n gs://$source $destination"
                 .startCommand()
                 .apply {
                     inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }

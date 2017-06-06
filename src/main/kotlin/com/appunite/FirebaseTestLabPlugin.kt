@@ -6,6 +6,7 @@ import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.TestVariant
 import com.appunite.cloud.CloudTestResultDownloader
 import com.appunite.cloud.CloudTestRunner
+import com.appunite.model.ArtifactType
 import com.appunite.model.Platform
 import com.appunite.model.TestResults
 import com.appunite.model.TestType
@@ -30,7 +31,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
     private lateinit var config: FirebaseTestLabPluginExtension
     private lateinit var downloader: CloudTestResultDownloader
 
-    private var artifactsMap: Map<String, Boolean> = hashMapOf()
+    private var artifactsToExcludeMap: Map<ArtifactType, Boolean> = hashMapOf()
 
     /**
      * Create extension used to configure testing properties, platforms..
@@ -53,23 +54,10 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
     private fun initConfig() {
         config = project.extensions.findByType(FirebaseTestLabPluginExtension::class.java).apply {
-
-            artifactsMap = this.artifacts.getArttifactsMap().filterValues { it == true }
-
-            // TODO: Move this check after run plugin's task
-//            if (!File(cloudSdkPath, Constants.GCLOUD).canExecute()) {
-//                project.logger.lifecycle(Constants.CLOUD_SDK_NOT_FOUND_OR_REMOTE)
-//            }
-//
-//            if (cloudBucketName.isNullOrBlank()) {
-//                throw GradleException(Constants.BUCKET_NAME_INVALID)
-//            }
-//            if (resultsTestDir.isNullOrEmpty()) {
-//                throw GradleException(Constants.RESULTS_TEST_DIR_NOT_VALID)
-//            }
+            artifactsToExcludeMap = this.artifacts.getArtifactsMap().filterValues { it == false }
         }
 
-        downloader = CloudTestResultDownloader(artifactsMap, File(project.buildDir, RESULT_PATH),
+        downloader = CloudTestResultDownloader(artifactsToExcludeMap, File(project.buildDir, RESULT_PATH),
                 File(config.cloudSdkPath), config.cloudBucketName, config.resultsTestDir, project.logger)
     }
 
@@ -145,7 +133,23 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 config.platforms.forEach { platform ->
                     logger.lifecycle("Name: " + platform.name)
                 }
-                logger.lifecycle("Filtered ARTIFACTS: " + artifactsMap.size)
+                logger.lifecycle("Filtered ARTIFACTS to exclude: " + artifactsToExcludeMap.size)
+                val startQuery = "-x \".*\\.txt$|.*\\.apk$"
+                val endQuery = "|.*\\.txt$\""
+                val excludeQuery = StringBuilder().append(startQuery)
+                artifactsToExcludeMap.keys.forEach { key ->
+                    when (key){
+                        ArtifactType.VIDEO -> excludeQuery.append("|.*\\.mp4$")
+                        ArtifactType.XML -> excludeQuery.append("|.*\\.results$")
+                        ArtifactType.LOGCAT -> excludeQuery.append("|.*\\logcat$")
+                        ArtifactType.JUNIT -> excludeQuery.append("|.*\\.xml$")
+                    }
+                }
+                excludeQuery.append(endQuery).toString()
+                logger.lifecycle("EXCLUDE BUILDER: " + excludeQuery)
+                val excludeFiles = "-x \".*\\.txt$|.*\\.mp4$|.*\\.apk$|.*\\.results$|.*\\logcat$|.*\\.txt$\""
+                logger.lifecycle("EXLUDE EXAMPLE: " + excludeFiles)
+
             }
         })
     }

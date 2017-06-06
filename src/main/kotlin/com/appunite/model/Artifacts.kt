@@ -7,7 +7,16 @@ class Artifacts {
     var video: Boolean = false
     var instrumentation: Boolean = false
 
-    fun getArttifactsMap(): Map<String, Boolean> {
-        return mapOf(Pair("junit", junit), Pair("logcat", logcat), Pair("video", video), Pair("instrumentation", instrumentation))
+    fun getArtifactsMap(): Map<ArtifactType, Boolean> {
+        return mapOf(
+                Pair(ArtifactType.JUNIT, junit),
+                Pair(ArtifactType.LOGCAT, logcat),
+                Pair(ArtifactType.VIDEO, video),
+                Pair(ArtifactType.XML, instrumentation))
     }
 }
+
+enum class ArtifactType {
+    JUNIT, LOGCAT, VIDEO, XML
+}
+
