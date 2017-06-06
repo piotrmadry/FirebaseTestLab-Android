@@ -5,7 +5,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.script.lang.kotlin.*
 
 group = "firebase.test.lab"
-version = "0.0.2.4"
+version = "0.0.6.3"
 
 buildscript {
     repositories {
@@ -56,7 +56,6 @@ configure<PublishingExtension> {
         mavenLocal()
     }
 }
-
 
 dependencies {
     compile(gradleApi())

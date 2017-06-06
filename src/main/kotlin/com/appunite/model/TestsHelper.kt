@@ -1,4 +1,4 @@
-package com.appunite.extensions
+package com.appunite.model
 
 const val RESULT_SUCCESSFUL = 0
 
