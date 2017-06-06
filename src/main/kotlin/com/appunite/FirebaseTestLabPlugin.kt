@@ -47,7 +47,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
         project.afterEvaluate {
             setup()
-            createTasks()
+            createTaskForAndroid()
             testingTask()
         }
     }
@@ -60,7 +60,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 File(config.cloudSdkPath), config.cloudBucketName, config.resultsTestDir, project.logger)
     }
 
-    private fun createTasks() {
+    private fun createTaskForAndroid() {
         val platforms = config.platforms.toList()
         (project.extensions.findByName(ANDROID) as AppExtension).apply {
             val debugVariant = testVariants.toList()[0]
@@ -83,6 +83,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 TestType.instrumentation -> arrayOf("assemble${variantName}", "assemble${variant.name.capitalize()}")
                 TestType.robo -> arrayOf("assemble${variantName}")
             })
+            doFirst { configDataValidation() }
             doLast {
                 platforms.forEach { platform ->
                     val result = runTestLabTest(testType, platform, apkSource)
@@ -91,6 +92,27 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 downloader.fetchArtifacts()
             }
         })
+    }
+
+    private fun configDataValidation() {
+        if (!File(Constants.GCLOUD, config.cloudSdkPath).exists() || !File(Constants.GSUTIL, config.cloudSdkPath).exists()) {
+            project.logger.warn(Constants.CLOUD_SDK_NOT_FOUND_OR_REMOTE)
+        }
+        if (config.cloudBucketName.isNullOrEmpty()) {
+            throw GradleException(Constants.BUCKET_NAME_INVALID)
+        }
+        if (config.resultsTestDir.isNullOrEmpty()) {
+            throw GradleException(Constants.RESULTS_TEST_DIR_NOT_VALID)
+        }
+        if (config.platforms.toList().isEmpty()) {
+            throw GradleException(Constants.PLATFORM_NOT_SPECIFIED)
+        }
+        if (config.artifacts.getArtifactsMap().filterValues { it }.isEmpty()) {
+            project.logger.warn(Constants.ARTIFACTS_NOT_CONFIGURED)
+        }
+        if (config.ignoreFailures) {
+            project.logger.warn(Constants.IGNORE_FAUILURE_ENABLED)
+        }
     }
 
     private fun processResult(result: TestResults, ignoreFailures: Boolean) {
