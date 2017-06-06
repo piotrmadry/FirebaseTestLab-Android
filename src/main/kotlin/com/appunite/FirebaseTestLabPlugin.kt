@@ -6,9 +6,9 @@ import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.TestVariant
 import com.appunite.cloud.CloudTestResultDownloader
 import com.appunite.cloud.CloudTestRunner
-import com.appunite.extensions.Platform
-import com.appunite.extensions.TestResults
-import com.appunite.extensions.TestType
+import com.appunite.model.Platform
+import com.appunite.model.TestResults
+import com.appunite.model.TestType
 import com.appunite.utils.ApkSource
 import com.appunite.utils.BuildParameterApkSource
 import com.appunite.utils.Constants
@@ -28,6 +28,9 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
     private lateinit var project: Project
     private lateinit var config: FirebaseTestLabPluginExtension
+    private lateinit var downloader: CloudTestResultDownloader
+
+    private var artifactsMap: Map<String, Boolean> = hashMapOf()
 
     /**
      * Create extension used to configure testing properties, platforms..
@@ -44,24 +47,30 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         project.afterEvaluate {
             initConfig()
             createTasks()
+            testingTask()
         }
     }
 
     private fun initConfig() {
         config = project.extensions.findByType(FirebaseTestLabPluginExtension::class.java).apply {
-            if (!File(cloudSdkPath, Constants.GCLOUD).canExecute()) {
-                project.logger.lifecycle(Constants.CLOUD_SDK_NOT_FOUND_OR_REMOTE)
-            }
-            if (artifacts.getArtifactPaths().isEmpty()) {
-                project.logger.error(Constants.ARTIFACTS_NOT_CONFIGURED)
-            }
-            if (cloudBucketName.isNullOrBlank()) {
-                throw GradleException(Constants.BUCKET_NAME_INVALID)
-            }
-            if (resultsTestDir.isNullOrEmpty()){
-                throw GradleException(Constants.RESULTS_TEST_DIR_NOT_VALID)
-            }
+
+            artifactsMap = this.artifacts.getArttifactsMap().filterValues { it == true }
+
+            // TODO: Move this check after run plugin's task
+//            if (!File(cloudSdkPath, Constants.GCLOUD).canExecute()) {
+//                project.logger.lifecycle(Constants.CLOUD_SDK_NOT_FOUND_OR_REMOTE)
+//            }
+//
+//            if (cloudBucketName.isNullOrBlank()) {
+//                throw GradleException(Constants.BUCKET_NAME_INVALID)
+//            }
+//            if (resultsTestDir.isNullOrEmpty()) {
+//                throw GradleException(Constants.RESULTS_TEST_DIR_NOT_VALID)
+//            }
         }
+
+        downloader = CloudTestResultDownloader(artifactsMap, File(project.buildDir, RESULT_PATH),
+                File(config.cloudSdkPath), config.cloudBucketName, config.resultsTestDir, project.logger)
     }
 
     /**
@@ -121,7 +130,22 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 val result = runTestLabTest(type, platform, apks)
                 project.logger.lifecycle("TEST RESULT DIRECTORY: " + result.resultDir)
                 processResult(result, config.ignoreFailures)
-                downloadArtifacts()
+                downloader.fetchArtifacts()
+            }
+        })
+    }
+
+    private fun testingTask() {
+        project.task("Logger", closureOf<Task> {
+            group = "Debug"
+            description = "Print config info"
+
+            doLast {
+                logger.lifecycle("Number PLATFORMS: " + config.platforms.size)
+                config.platforms.forEach { platform ->
+                    logger.lifecycle("Name: " + platform.name)
+                }
+                logger.lifecycle("Filtered ARTIFACTS: " + artifactsMap.size)
             }
         })
     }
@@ -136,18 +160,6 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 throw GradleException(result.message)
             }
         }
-    }
-
-    private fun downloadArtifacts() {
-        project.logger.lifecycle(Constants.DOWNLOADING_ARTIFACTS_STARTED)
-
-        CloudTestResultDownloader(
-                config.artifacts.getArtifactPaths(),
-                File(project.buildDir, RESULT_PATH),
-                File(config.cloudSdkPath),
-                config.cloudBucketName,
-                config.resultsTestDir,
-                project.logger)
     }
 
     private fun runTestLabTest(

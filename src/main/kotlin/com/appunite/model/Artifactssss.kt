@@ -1,9 +1,9 @@
-package com.appunite.extensions
+package com.appunite.model
 
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-interface Artifacts {
+interface Artifactssss {
     var junit: Boolean
     var logcat: Boolean
     var video: Boolean
@@ -12,7 +12,7 @@ interface Artifacts {
     fun getArtifactPaths(): List<String>
 }
 
-class ArtifactsImpl : Artifacts {
+class ArtifactssssImpl : Artifactssss {
 
     override var junit by PathBoolean("test_result_*.xml", true)
     override var logcat by PathBoolean("logcat")
@@ -24,10 +24,10 @@ class ArtifactsImpl : Artifacts {
 
     class PathBoolean(private var path: String,
                       private var value: Boolean = false)
-        : ReadWriteProperty<ArtifactsImpl, Boolean> {
-        override fun getValue(thisRef: ArtifactsImpl, property: KProperty<*>) = value
+        : ReadWriteProperty<ArtifactssssImpl, Boolean> {
+        override fun getValue(thisRef: ArtifactssssImpl, property: KProperty<*>) = value
 
-        override fun setValue(thisRef: ArtifactsImpl, property: KProperty<*>, value: Boolean) {
+        override fun setValue(thisRef: ArtifactssssImpl, property: KProperty<*>, value: Boolean) {
             this.value = value
             if (value) {
                 thisRef.paths += path

@@ -1,4 +1,4 @@
-package com.appunite.extensions
+package com.appunite.model
 
 
 enum class Orientation {

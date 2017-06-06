@@ -1,6 +1,6 @@
 package com.appunite.cloud
 
-import com.appunite.extensions.*
+import com.appunite.model.*
 import com.appunite.utils.ApkSource
 import com.appunite.utils.asCommand
 import com.appunite.utils.command
@@ -20,9 +20,6 @@ internal class CloudTestRunner(val cloudBucketName: String,
                                platform: Platform,
                                apks: ApkSource) : FirebaseTestLabRunner {
 
-    /**
-     * Declare process builder that contain terminal command to run tests
-     */
     private val processCreator = ProcessBuilder("""
         ${command("gcloud", cloudSdkPath)}
                 firebase test android run
@@ -40,29 +37,17 @@ internal class CloudTestRunner(val cloudBucketName: String,
     """.asCommand())
 
     override fun run(): TestResults {
-        val process = processCreator.start() // Run command
-        logger.debug(processCreator.command().joinArgs()) // Print whole command
+        val process = processCreator.start()
 
-        var resultDir: String? = null
+        val resultsDir = "$cloudBucketName/$resultsTestDir"
 
-        process.errorStream.bufferedReader().forEachLine {
-            logger.lifecycle(it)
-//            if (it.contains(cloudBucketName)) {
-//                resultDir = "$cloudBucketName\\/(.*)\\/".toRegex().find(it)?.groups?.get(1)?.value
-//                if (resultDir == null) {
-//                    logger.error(Constants.ERROR + "Cannot achieve result dir name. Results will not be downloaded.")
-//                } else {
-//                    logger.lifecycle("Target result dir name is $resultDir")
-//                }
-//            }
-        }
-
+        process.errorStream.bufferedReader().forEachLine { logger.lifecycle(it) }
         process.inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
 
         val resultCode = process.waitFor()
         return TestResults(
                 isSuccessful = resultCode == RESULT_SUCCESSFUL,
-                resultDir = resultDir,
+                resultDir = resultsDir,
                 message = resultMessages[resultCode] ?: ""
         )
     }

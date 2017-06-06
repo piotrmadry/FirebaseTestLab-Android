@@ -8,47 +8,30 @@ import org.gradle.api.logging.Logger
 import java.io.File
 
 
-class CloudTestResultDownloader(val artifacts: List<String>,
+class CloudTestResultDownloader(val artifacts: Map<String, Boolean>,
                                 val destinationDir: File,
                                 val cloudSdkPath: File,
                                 val cloudBucketName: String,
                                 val resultsTestDir: String,
                                 val logger: Logger) {
-    init {
-        downloadResults()
-    }
-
-    private fun downloadResults() {
-
+    fun fetchArtifacts() {
         if (artifacts.isEmpty()) {
-            logger.error(Constants.ARTIFACTS_NOT_CONFIGURED)
             return
         }
+        logger.lifecycle(Constants.DOWNLOAD_PHASE + "Downloading results from $resultsTestDir")
 
-        logger.lifecycle("Downloading results from $resultsTestDir")
+        val destinationPath = "$destinationDir/$resultsTestDir"
+        val sourcePath = "$cloudBucketName/$resultsTestDir"
 
-        val destination = "$destinationDir/$resultsTestDir"
-        prepareDestination(destination)
-        artifacts.forEach { resource ->
-            logger.lifecycle("Downloading artifacts" + resource)
-            downloadResource("$cloudBucketName/$resultsTestDir", destination)
-        }
-        logger.lifecycle("Artifacts downloaded")
+        prepareDestination(destinationPath)
+        downloadResource(sourcePath, destinationPath)
     }
 
     private fun prepareDestination(destPath: String) {
         val destination = File(destPath)
-        logger.lifecycle("Preparing destination dir $destination")
-        if (destination.exists()) {
-            logger.lifecycle("Destination $destination is exists, delete recursively")
-            if (!destination.isDirectory) {
-                throw GradleException("Destination path $destination is not directory")
-            }
-            destination.deleteRecursively()
-        }
         destination.mkdirs()
         if (!destination.exists()) {
-            throw GradleException("Cannot create destination dir $destination")
+            throw GradleException("Issue when tried to create destination dir $destination")
         }
     }
 
@@ -64,16 +47,4 @@ class CloudTestResultDownloader(val artifacts: List<String>,
                 }
                 .waitFor() == 0
     }
-
-//    private fun getResultDirs() = "ui-tests"
-//            "${command("gsutil", cloudSdkPath)} ls gs://$cloudBucketName/${testResults.resultDir}"
-//                    .startCommand()
-//                    .apply {
-//                        errorStream.bufferedReader().forEachLine { logger.error("getResultDir " + it) }
-//                    }
-//                    .inputStream
-//                    .bufferedReader()
-//                    .readLines()
-//                    .filter { it.endsWith("/") }
-
 }
