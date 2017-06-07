@@ -21,22 +21,20 @@ class CloudTestResultDownloader(val artifacts: Map<ArtifactType, Boolean>,
         }
         logger.lifecycle(Constants.DOWNLOAD_PHASE + "Downloading results from $resultsTestDir")
 
-        val destinationPath = "$destinationDir/$resultsTestDir"
         val sourcePath = "$cloudBucketName/$resultsTestDir"
 
-        prepareDestination(destinationPath)
-        downloadResource(sourcePath, destinationPath, artifacts)
+        prepareDestination(destinationDir)
+        downloadResource(sourcePath, destinationDir, artifacts)
     }
 
-    private fun prepareDestination(destPath: String) {
-        val destination = File(destPath)
+    private fun prepareDestination(destination: File) {
         destination.mkdirs()
         if (!destination.exists()) {
             throw GradleException("Issue when creating destination dir $destination")
         }
     }
 
-    private fun downloadResource(source: String, destination: String, artifacts: Map<ArtifactType, Boolean>): Boolean {
+    private fun downloadResource(source: String, destination: File, artifacts: Map<ArtifactType, Boolean>): Boolean {
         //TODO: Remove -n and leave comment about first and last files to exclude
         val startQuery = "-x \".*\\.txt$|.*\\.apk$"
         val endQuery = "|.*\\.txt$\""
