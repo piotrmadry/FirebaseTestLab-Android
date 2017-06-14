@@ -22,9 +22,9 @@ import java.io.File
 
 class FirebaseTestLabPlugin : Plugin<Project> {
 
-    private val GRADLE_METHOD_NAME = "FirebaseTestLabConfig"
+    private val GRADLE_METHOD_NAME = "firebaseTestLab"
     private val ANDROID = "android"
-    private val RESULT_PATH = "reports/firebase-test-lab"
+    private val RESULT_PATH = "ui-tests"
     private val TASK_NAME = "uploadTestLab"
 
     private lateinit var project: Project
@@ -85,6 +85,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             })
             doFirst { configDataValidation() }
             doLast {
+                downloader.clearBucket(config.cloudSdkPath, config.cloudBucketName)
                 platforms.forEach { platform ->
                     val result = runTestLabTest(testType, platform, apkSource)
                     processResult(result, config.ignoreFailures)
