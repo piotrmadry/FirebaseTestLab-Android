@@ -25,7 +25,6 @@ class CloudTestResultDownloader(val artifacts: Map<ArtifactType, Boolean>,
 
         prepareDestination(destinationDir)
         downloadResource(sourcePath, destinationDir, artifacts)
-        clearBucket(cloudSdkPath, cloudBucketName)
     }
 
     private fun prepareDestination(destination: File) {
@@ -65,7 +64,7 @@ class CloudTestResultDownloader(val artifacts: Map<ArtifactType, Boolean>,
 //                .waitFor() == 0
     }
 
-    private fun clearBucket(cloudSdkPath: File, bucketName: String){
+    fun clearBucket(cloudSdkPath: String, bucketName: String){
         val processCreator = ProcessBuilder("""${command("gsutil", cloudSdkPath)} rm gs://$bucketName/**""".asCommand())
         val process = processCreator.start()
 
