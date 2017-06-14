@@ -55,13 +55,6 @@ class CloudTestResultDownloader(val artifacts: Map<ArtifactType, Boolean>,
         process.inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
 
         process.waitFor()
-
-//                .startCommand()
-//                .apply {
-//                    inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
-//                    errorStream.bufferedReader().forEachLine { logger.error("Download resources: " + it) }
-//                }
-//                .waitFor() == 0
     }
 
     fun clearBucket(cloudSdkPath: File, bucketName: String){

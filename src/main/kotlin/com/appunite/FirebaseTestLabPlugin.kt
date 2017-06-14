@@ -24,7 +24,6 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
     private val GRADLE_METHOD_NAME = "firebaseTestLab"
     private val ANDROID = "android"
-    private val RESULT_PATH = "ui-tests"
     private val TASK_NAME = "uploadTestLab"
 
     private lateinit var project: Project
@@ -56,7 +55,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         config = project.extensions.findByType(FirebaseTestLabPluginExtension::class.java).apply {
             artifactsToExcludeMap = this.artifacts.getArtifactsMap().filterValues { it == false }
         }
-        downloader = CloudTestResultDownloader(artifactsToExcludeMap, File(config.resultsDestinationPath, RESULT_PATH),
+        downloader = CloudTestResultDownloader(artifactsToExcludeMap, File(config.resultsDestinationPath, config.resultsTestDir),
                 File(config.cloudSdkPath), config.cloudBucketName, config.resultsTestDir, project.logger)
     }
 
