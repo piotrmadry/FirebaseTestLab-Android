@@ -22,7 +22,7 @@ import java.io.File
 
 class FirebaseTestLabPlugin : Plugin<Project> {
 
-    private val GRADLE_METHOD_NAME = "FirebaseTestLabConfig"
+    private val GRADLE_METHOD_NAME = "firebaseTestLab"
     private val ANDROID = "android"
     private val RESULT_PATH = "ui-tests"
     private val TASK_NAME = "uploadTestLab"

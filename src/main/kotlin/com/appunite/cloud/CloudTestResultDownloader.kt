@@ -2,8 +2,8 @@ package com.appunite.cloud
 
 import com.appunite.model.ArtifactType
 import com.appunite.utils.Constants
+import com.appunite.utils.asCommand
 import com.appunite.utils.command
-import com.appunite.utils.startCommand
 import org.gradle.api.GradleException
 import org.gradle.api.logging.Logger
 import java.io.File
@@ -25,6 +25,7 @@ class CloudTestResultDownloader(val artifacts: Map<ArtifactType, Boolean>,
 
         prepareDestination(destinationDir)
         downloadResource(sourcePath, destinationDir, artifacts)
+        clearBucket(cloudSdkPath, cloudBucketName)
     }
 
     private fun prepareDestination(destination: File) {
@@ -34,7 +35,7 @@ class CloudTestResultDownloader(val artifacts: Map<ArtifactType, Boolean>,
         }
     }
 
-    private fun downloadResource(source: String, destination: File, artifacts: Map<ArtifactType, Boolean>): Boolean {
+    private fun downloadResource(source: String, destination: File, artifacts: Map<ArtifactType, Boolean>) {
         //TODO: Remove -n and leave comment about first and last files to exclude
         val startQuery = "-x \".*\\.txt$|.*\\.apk$"
         val endQuery = "|.*\\.txt$\""
@@ -48,15 +49,29 @@ class CloudTestResultDownloader(val artifacts: Map<ArtifactType, Boolean>,
             }
         }
         excludeQuery.append(endQuery).toString()
-//        TODO: Remove
-//        val excludeFiles = "-x \".*\\.txt$|.*\\.mp4$|.*\\.apk$|.*\\.results$|.*\\logcat$|.*\\.txt$\""
-        logger.lifecycle("${command("gsutil", cloudSdkPath)} -m rsync $excludeQuery -r gs://$source $destination")
-        return "${command("gsutil", cloudSdkPath)} -m rsync $excludeQuery -r gs://$source $destination"
-                .startCommand()
-                .apply {
-                    inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
-                    errorStream.bufferedReader().forEachLine { logger.error("Download resources: " + it) }
-                }
-                .waitFor() == 0
+        val processCreator = ProcessBuilder("""${command("gsutil", cloudSdkPath)} -m rsync $excludeQuery -r gs://$source $destination""".asCommand())
+        val process = processCreator.start()
+
+        process.errorStream.bufferedReader().forEachLine { logger.lifecycle(it) }
+        process.inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
+
+        process.waitFor()
+
+//                .startCommand()
+//                .apply {
+//                    inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
+//                    errorStream.bufferedReader().forEachLine { logger.error("Download resources: " + it) }
+//                }
+//                .waitFor() == 0
+    }
+
+    private fun clearBucket(cloudSdkPath: File, bucketName: String){
+        val processCreator = ProcessBuilder("""${command("gsutil", cloudSdkPath)} rm gs://$bucketName/**""".asCommand())
+        val process = processCreator.start()
+
+        process.errorStream.bufferedReader().forEachLine { logger.lifecycle(it) }
+        process.inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
+
+        process.waitFor()
     }
 }
