@@ -24,7 +24,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
     private val GRADLE_METHOD_NAME = "FirebaseTestLabConfig"
     private val ANDROID = "android"
-    private val RESULT_PATH = "reports/firebase-test-lab"
+    private val RESULT_PATH = "ui-tests"
     private val TASK_NAME = "uploadTestLab"
 
     private lateinit var project: Project
