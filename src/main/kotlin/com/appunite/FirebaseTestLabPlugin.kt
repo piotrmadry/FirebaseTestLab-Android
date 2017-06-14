@@ -85,7 +85,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             })
             doFirst { configDataValidation() }
             doLast {
-                downloader.clearBucket(config.cloudSdkPath, config.cloudBucketName)
+                downloader.clearBucket(File(config.cloudSdkPath), config.cloudBucketName)
                 platforms.forEach { platform ->
                     val result = runTestLabTest(testType, platform, apkSource)
                     processResult(result, config.ignoreFailures)
