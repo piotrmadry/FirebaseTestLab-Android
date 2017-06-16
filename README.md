@@ -23,16 +23,16 @@ This plugin uses [Firebase Test Lab](https://firebase.google.com/docs/test-lab/)
   }
 }
 
-apply plugin: "firebase.test.lab"```
-
+apply plugin: "firebase.test.lab"
+```
 or for Gradle 2.1 and higher
 ```
 plugins {
   id "firebase.test.lab" version "0.7"
 }
 ```
-
 ## Plugin Configuration
+
 ```firebaseTestLab {
     //[REQUIRED FILED] Path to gcloud from your Cloud SDK
     cloudSdkPath = "/builds/zumba/zumba-android/cloud-sdk/bin"
@@ -59,6 +59,15 @@ plugins {
             androidApiLevels = [22]
             deviceIds = ["trelte"]
         }
+        // More advanced configuration
+        nexus5 {
+            androidApiLevels = [21]
+            deviceIds = ["hammerhead"]
+            locales = ["en", "fr"]
+            orientations = ["portrait", "landscape"]
+            timeout = 20
+        }
     }
 }```
+## Note that every addition element in fields lists will create new device configuration. For example: hammerhead-21-en-portrait, hammerhead-21-fr-portrait, hammerhead-21-en-landscape, hammerhead-21-fr-landscape. 
 
