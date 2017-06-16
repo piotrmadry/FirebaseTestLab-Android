@@ -3,7 +3,7 @@ import com.gradle.publish.PluginBundleExtension
 import org.gradle.script.lang.kotlin.*
 
 group = "firebase.test.lab"
-version = "0.7"
+version = "0.7.1"
 
 buildscript {
     repositories {
