@@ -10,6 +10,12 @@ This plugin uses [Firebase Test Lab](https://firebase.google.com/docs/test-lab/)
 - Firebase project with configured billing plan (Custom bucket name and variety of testing devices requires it)
 - Installed, authorized and inited [Google Cloud Sdk](https://cloud.google.com/sdk/?utm_source=google&utm_medium=cpc&utm_campaign=2017-q1-cloud-emea-gcp-bkws-freetrial&gclid=CLCGn7b0wdQCFcwaGAodGqsJqA&dclid=CIW1srb0wdQCFZvNsgodLwkBjQ)
 
+## Features
+- Ability to run it on CI side (with proper Cloud SDK authorization)
+- Your bucket directory and local download directory are synced. It means that you will download only not yet synced files.
+- You can specify download location
+- Bucket naming management
+
 ## Configuration
 
 ```buildscript {
@@ -68,6 +74,7 @@ plugins {
             timeout = 20
         }
     }
-}```
+}
+```
 ## Note that every addition element in fields lists will create new device configuration. For example: hammerhead-21-en-portrait, hammerhead-21-fr-portrait, hammerhead-21-en-landscape, hammerhead-21-fr-landscape. 
 
