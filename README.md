@@ -25,10 +25,40 @@ This plugin uses [Firebase Test Lab](https://firebase.google.com/docs/test-lab/)
 
 apply plugin: "firebase.test.lab"```
 
-```
 or for Gradle 2.1 and higher
 ```
 plugins {
   id "firebase.test.lab" version "0.7"
 }
 ```
+
+## Plugin Configuration
+```firebaseTestLab {
+    //[REQUIRED FILED] Path to gcloud from your Cloud SDK
+    cloudSdkPath = "/builds/zumba/zumba-android/cloud-sdk/bin"
+    //[REQUIRED FILED] You bucket name to identify place to store your tests results [requres billing plan]
+    cloudBucketName = "zumba-test"
+    // Destination path for your results
+    resultsDestinationPath = "/builds/zumba/zumba-android"
+    // Name of directory where you can find your tests results (remotely in your bucket at Google Cloud Console and at your       download location)
+    resultsTestDir = "ui-testing"
+    //It will not throw any exception even if some tests failed
+    ignoreFailures = true
+
+    // Types of artifacts to download
+    artifacts {
+        junit = true
+        logcat = false
+        video = false
+        instrumentation = false
+    }
+    // Types of tests [devices](https://firebase.google.com/docs/test-lab/images/gcloud-device-list.png)  
+    platforms {
+        //Those fields are required to run tests on this device
+        galaxyNote4 {
+            androidApiLevels = [22]
+            deviceIds = ["trelte"]
+        }
+    }
+}```
+
