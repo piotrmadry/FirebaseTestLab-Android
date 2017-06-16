@@ -11,3 +11,24 @@ This plugin uses [Firebase Test Lab](https://firebase.google.com/docs/test-lab/)
 - Installed, authorized and inited [Google Cloud Sdk](https://cloud.google.com/sdk/?utm_source=google&utm_medium=cpc&utm_campaign=2017-q1-cloud-emea-gcp-bkws-freetrial&gclid=CLCGn7b0wdQCFcwaGAodGqsJqA&dclid=CIW1srb0wdQCFZvNsgodLwkBjQ)
 
 ## Configuration
+
+```buildscript {
+  repositories {
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+  }
+  dependencies {
+    classpath "gradle.plugin.firebase.test.lab:firebase-test-lab:0.7"
+  }
+}
+
+apply plugin: "firebase.test.lab"```
+
+```
+or for Gradle 2.1 and higher
+```
+plugins {
+  id "firebase.test.lab" version "0.7"
+}
+```
