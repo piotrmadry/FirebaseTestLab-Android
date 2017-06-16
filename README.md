@@ -18,7 +18,8 @@ This plugin uses [Firebase Test Lab](https://firebase.google.com/docs/test-lab/)
 
 ## Configuration
 
-```buildscript {
+```
+buildscript {
   repositories {
     maven {
       url "https://plugins.gradle.org/m2/"
@@ -39,7 +40,8 @@ plugins {
 ```
 ## Plugin Configuration
 
-```firebaseTestLab {
+```
+firebaseTestLab {
     //[REQUIRED FILED] Path to gcloud from your Cloud SDK
     cloudSdkPath = "/builds/zumba/zumba-android/cloud-sdk/bin"
     //[REQUIRED FILED] You bucket name to identify place to store your tests results [requres billing plan]
@@ -76,5 +78,8 @@ plugins {
     }
 }
 ```
-## Note that every addition element in fields lists will create new device configuration. For example: hammerhead-21-en-portrait, hammerhead-21-fr-portrait, hammerhead-21-en-landscape, hammerhead-21-fr-landscape. 
+#### Note that every addition element in fields lists will create new device configuration. For example: hammerhead-21-en-portrait, hammerhead-21-fr-portrait, hammerhead-21-en-landscape, hammerhead-21-fr-landscape. 
+
+## How to run 
+`./gradlew uploadTestLab`
 
