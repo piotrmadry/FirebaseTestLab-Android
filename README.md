@@ -26,7 +26,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath "gradle.plugin.firebase.test.lab:firebase-test-lab:0.7"
+    classpath "gradle.plugin.firebase.test.lab:firebase-test-lab:0.7.1"
   }
 }
 
@@ -35,7 +35,7 @@ apply plugin: "firebase.test.lab"
 or for Gradle 2.1 and higher
 ```
 plugins {
-  id "firebase.test.lab" version "0.7"
+  id "firebase.test.lab" version "0.7.1"
 }
 ```
 ## Plugin Configuration
