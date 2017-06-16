@@ -47,7 +47,6 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         project.afterEvaluate {
             setup()
             createTaskForAndroid()
-            testingTask()
         }
     }
 
@@ -136,36 +135,5 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             apkSource: ApkSource): TestResults {
         return CloudTestRunner(config.cloudBucketName, config.resultsTestDir, project.logger,
                 testType, File(config.cloudSdkPath), platform, apkSource).run()
-    }
-
-    private fun testingTask() {
-        project.task("Logger", closureOf<Task> {
-            group = "Debug"
-            description = "Print config info"
-
-            doLast {
-                logger.lifecycle("Number PLATFORMS: " + config.platforms.size)
-                config.platforms.forEach { platform ->
-                    logger.lifecycle("Name: " + platform.name)
-                }
-                logger.lifecycle("Filtered ARTIFACTS to exclude: " + artifactsToExcludeMap.size)
-                val startQuery = "-x \".*\\.txt$|.*\\.apk$"
-                val endQuery = "|.*\\.txt$\""
-                val excludeQuery = StringBuilder().append(startQuery)
-                artifactsToExcludeMap.keys.forEach { key ->
-                    when (key) {
-                        ArtifactType.VIDEO -> excludeQuery.append("|.*\\.mp4$")
-                        ArtifactType.XML -> excludeQuery.append("|.*\\.results$")
-                        ArtifactType.LOGCAT -> excludeQuery.append("|.*\\logcat$")
-                        ArtifactType.JUNIT -> excludeQuery.append("|.*\\.xml$")
-                    }
-                }
-                excludeQuery.append(endQuery).toString()
-                logger.lifecycle("EXCLUDE BUILDER: " + excludeQuery)
-                val excludeFiles = "-x \".*\\.txt$|.*\\.mp4$|.*\\.apk$|.*\\.results$|.*\\logcat$|.*\\.txt$\""
-                logger.lifecycle("EXLUDE EXAMPLE: " + excludeFiles)
-
-            }
-        })
     }
 }
