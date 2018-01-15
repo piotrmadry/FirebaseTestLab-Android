@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "firebase.test.lab"
-version = "1.0.1.17"
+version = "1.0.1.22"
 
 gradlePlugin {
     (plugins) {

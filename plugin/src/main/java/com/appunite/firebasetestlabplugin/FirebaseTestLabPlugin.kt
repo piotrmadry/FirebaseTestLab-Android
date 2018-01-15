@@ -10,6 +10,7 @@ import com.appunite.firebasetestlabplugin.model.TestType
 import com.appunite.firebasetestlabplugin.utils.ApkSource
 import com.appunite.firebasetestlabplugin.utils.Constants
 import com.appunite.firebasetestlabplugin.utils.VariantApkSource
+import com.appunite.firebasetestlabplugin.utils.capitalizeIt
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -27,7 +28,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
     }
 
     private lateinit var project: Project
-    private lateinit var extension: FirebaseTestLabPluginExtension
+    private var extension: FirebaseTestLabPluginExtension? = null
     private lateinit var resultDownloader: CloudTestResultDownloader
     private lateinit var processCreator: FirebaseTestLabProcessCreator
 
@@ -45,30 +46,32 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
 
         project.afterEvaluate {
             setup()
-            createTaskForAndroid()
+            extension?.let { createTaskForAndroid() }
         }
     }
 
     private fun setup() {
-        extension = project.extensions.findByType(FirebaseTestLabPluginExtension::class.java)!!
-        resultDownloader = CloudTestResultDownloader(
-                extension.resultsTypes,
-                File(extension.cloudSdkPath),
-                File(extension.cloudDirectoryName),
-                extension.cloudBucketName!!,
-                project.logger
-        )
+        extension = project.extensions.findByType(FirebaseTestLabPluginExtension::class.java)?.apply {
+            resultDownloader = CloudTestResultDownloader(
+                    resultsTypes,
+                    File(cloudSdkPath),
+                    File(cloudDirectoryName),
+                    File(project.buildDir, cloudDirectoryName),
+                    cloudBucketName!!,
+                    project.logger
+            )
 
-        processCreator = FirebaseTestLabProcessCreator(
-                extension.cloudBucketName,
-                extension.cloudBucketName,
-                File(extension.cloudSdkPath),
-                project.logger
-        )
+            processCreator = FirebaseTestLabProcessCreator(
+                    cloudBucketName,
+                    cloudDirectoryName,
+                    File(cloudSdkPath),
+                    project.logger
+            )
+        }
     }
 
     private fun createTaskForAndroid() {
-        val devices = extension.devices.toList()
+        val devices = extension!!.devices.toList()
         (project.extensions.findByName(ANDROID) as AppExtension).apply {
             testVariants.toList().forEach { testVariant ->
                 val variantApk: ApkSource = VariantApkSource(testVariant)
@@ -88,7 +91,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                                   apkSource: ApkSource) {
         val variantName = variant.testedVariant?.name?.capitalize() ?: ""
 
-        project.task("$variantName${testType.toString().toLowerCase().capitalize()}${device.name}" + TASK_NAME, closureOf<Task> {
+        project.task("${variantName.toLowerCase()}${testType.toString().capitalizeIt()}${device.name.capitalize()}" + TASK_NAME, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB
             description = "Run Android Tests in Firebase Test Lab"
 
@@ -98,8 +101,11 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             })
             doFirst { configDataValidation() }
             doLast {
+                if (extension!!.clearDirectoryBeforeRun) {
+                    resultDownloader.clearResultsDir()
+                }
                 val result = processCreator.callFirebaseTestLab(testType, device, apkSource)
-                processResult(result, extension.ignoreFailures)
+                processResult(result, extension!!.ignoreFailures)
                 resultDownloader.getResults()
             }
         })
@@ -111,7 +117,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                                          apkSource: ApkSource) {
         val variantName = variant.testedVariant?.name?.capitalize() ?: ""
 
-        project.task("$variantName${testType.toString().toLowerCase().capitalize()}" + TASK_NAME_GROUPED, closureOf<Task> {
+        project.task("${variantName.toLowerCase()}${testType.toString().capitalizeIt()}" + TASK_NAME_GROUPED, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB
             description = "Run Android Tests in Firebase Test Lab"
 
@@ -123,7 +129,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             doLast {
                 devices.forEach { device ->
                     val result = processCreator.callFirebaseTestLab(testType, device, apkSource)
-                    processResult(result, extension.ignoreFailures)
+                    processResult(result, extension!!.ignoreFailures)
                 }
                 resultDownloader.getResults()
             }
@@ -131,23 +137,20 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
     }
 
     private fun configDataValidation() {
-        if (!File(Constants.GCLOUD, extension.cloudSdkPath).exists() || !File(Constants.GSUTIL, extension.cloudSdkPath).exists()) {
+        if (!File(Constants.GCLOUD, extension!!.cloudSdkPath).exists() || !File(Constants.GSUTIL, extension!!.cloudSdkPath).exists()) {
             project.logger.warn(Constants.CLOUD_SDK_NOT_FOUND_OR_REMOTE)
         }
-        if (extension.cloudBucketName.isNullOrEmpty()) {
+        if (extension!!.cloudBucketName.isNullOrEmpty()) {
             throw GradleException(Constants.BUCKET_NAME_INVALID)
         }
-        if (extension.cloudDirectoryName.isEmpty()) {
+        if (extension!!.cloudDirectoryName.isEmpty()) {
             throw GradleException(Constants.RESULTS_TEST_DIR_NOT_VALID)
         }
-        if (extension.devices.toList().isEmpty()) {
+        if (extension!!.devices.toList().isEmpty()) {
             throw GradleException(Constants.PLATFORM_NOT_SPECIFIED)
         }
-        if (extension.ignoreFailures) {
+        if (extension!!.ignoreFailures) {
             project.logger.warn(Constants.IGNORE_FAUILURE_ENABLED)
-        }
-        if (extension.resultsPath != project.buildDir.toString()) {
-            project.logger.warn(Constants.WARN_CORRECT_RESULT_PATH)
         }
     }
 

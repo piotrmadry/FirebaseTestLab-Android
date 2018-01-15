@@ -15,7 +15,7 @@ open class FirebaseTestLabPluginExtension(private val project: Project) {
     var cloudSdkPath: String? = null
     var cloudBucketName: String? = null
     var cloudDirectoryName: String = DEFAULT_DIRECTORY_NAME
-    var resultsPath: String = DEFAULT_RESULTS_PATH
+    var clearDirectoryBeforeRun = false
     var ignoreFailures: Boolean = false
 
     val devices = project.container(Device::class.java)

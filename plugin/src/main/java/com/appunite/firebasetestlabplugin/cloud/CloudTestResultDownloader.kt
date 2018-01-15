@@ -12,11 +12,11 @@ import java.io.File
 class CloudTestResultDownloader(private val resultsTypes: ResultTypes,
                                 private val gCloudSdkPath: File,
                                 private val gCloudDirectory: File,
+                                private val resultsPath: File,
                                 private val gCloudBucketName: String,
                                 private val logger: Logger) {
 
     fun getResults() {
-        clearBucket()
         if (!resultsTypes.junit && !resultsTypes.logcat && !resultsTypes.video && !resultsTypes.xml) {
             return
         }
@@ -28,8 +28,8 @@ class CloudTestResultDownloader(private val resultsTypes: ResultTypes,
     }
 
     private fun prepareDownloadDirectory() {
-        gCloudDirectory.mkdirs()
-        if (!gCloudDirectory.exists()) {
+        resultsPath.mkdirs()
+        if (!resultsPath.exists()) {
             throw GradleException("Issue when creating destination dir $gCloudDirectory")
         }
     }
@@ -49,7 +49,7 @@ class CloudTestResultDownloader(private val resultsTypes: ResultTypes,
             excludeQuery.append("|.*\\.mp4$")
         }
         excludeQuery.append("|.*\\.txt$\"").toString()
-        val processCreator = ProcessBuilder("""${command("gsutil", gCloudSdkPath)} -m rsync $excludeQuery -r gs://$gCloudSdkPath $gCloudDirectory""".asCommand())
+        val processCreator = ProcessBuilder("""${command("gsutil", gCloudSdkPath)} -m rsync $excludeQuery -r gs://$gCloudBucketName/$gCloudDirectory $resultsPath""".asCommand())
         val process = processCreator.start()
 
         process.errorStream.bufferedReader().forEachLine { logger.lifecycle(it) }
@@ -58,8 +58,8 @@ class CloudTestResultDownloader(private val resultsTypes: ResultTypes,
         process.waitFor()
     }
 
-    private fun clearBucket() {
-        val processCreator = ProcessBuilder("""${command("gsutil", gCloudSdkPath)} rm gs://$gCloudBucketName/**""".asCommand())
+    fun clearResultsDir() {
+        val processCreator = ProcessBuilder("""${command("gsutil", gCloudSdkPath)} rm gs://$gCloudBucketName/$gCloudDirectory/**""".asCommand())
         val process = processCreator.start()
 
         process.errorStream.bufferedReader().forEachLine { logger.lifecycle(it) }

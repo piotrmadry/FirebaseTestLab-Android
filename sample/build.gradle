@@ -7,7 +7,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "gradle.plugin.firebase.test.lab:plugin:1.0.1.17"
+        classpath "gradle.plugin.firebase.test.lab:plugin:1.0.1.22"
     }
 }
 apply plugin: 'com.android.application'
@@ -36,12 +36,14 @@ android {
 firebaseTestLab {
     cloudSdkPath = "/Users/piotr/google-cloud-sdk/bin"
     cloudBucketName = "zumba-test"
+    cloudDirectoryName = "test-dir"
+    clearDirectoryBeforeRun = true
 
     resultTypes {
-        junit = false
-        logcat = false
-        video = false
-        xml = false
+        junit = true
+        logcat = true
+        video = true
+        xml = true
     }
 
     devices {
