@@ -22,7 +22,8 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
     companion object {
         private const val GRADLE_METHOD_NAME = "firebaseTestLab"
         private const val ANDROID = "android"
-        private const val TASK_NAME = "runFirebaseTestLab"
+        private const val TASK_NAME = "UploadTestLab"
+        private const val TASK_NAME_GROUPED = "AllDevices" + TASK_NAME
     }
 
     private lateinit var project: Project
@@ -69,25 +70,48 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
     private fun createTaskForAndroid() {
         val devices = extension.devices.toList()
         (project.extensions.findByName(ANDROID) as AppExtension).apply {
-            val variant = testVariants.toList()[0]
-            val variantApk: ApkSource = VariantApkSource(variant)
-            createTestLabTask(TestType.INSTRUMENTATION, devices, variant, variantApk)
-//            createTestLabTask(TestType.ROBO, devices, variant, variantApk)
-//            testVariants.forEach { testVariant ->
-//                val variantApk: ApkSource = VariantApkSource(testVariant)
-//                createTestLabTask(TestType.INSTUMENTATION, devices, testVariant, variantApk)
-//                createTestLabTask(TestType.ROBO, devices, testVariant, variantApk)
-//            }
+            testVariants.toList().forEach { testVariant ->
+                val variantApk: ApkSource = VariantApkSource(testVariant)
+                devices.forEach { device ->
+                    createTestLabTask(TestType.INSTRUMENTATION, device, testVariant, variantApk)
+                    createTestLabTask(TestType.ROBO, device, testVariant, variantApk)
+                }
+                createGroupedTestLabTask(TestType.INSTRUMENTATION, devices, testVariant, variantApk)
+                createGroupedTestLabTask(TestType.ROBO, devices, testVariant, variantApk)
+            }
         }
     }
 
     private fun createTestLabTask(testType: TestType,
-                                  devices: List<Device>,
+                                  device: Device,
                                   variant: TestVariant,
                                   apkSource: ApkSource) {
         val variantName = variant.testedVariant?.name?.capitalize() ?: ""
 
-        project.task(TASK_NAME, closureOf<Task> {
+        project.task("$variantName${testType.toString().toLowerCase().capitalize()}${device.name}" + TASK_NAME, closureOf<Task> {
+            group = Constants.FIREBASE_TEST_LAB
+            description = "Run Android Tests in Firebase Test Lab"
+
+            dependsOn(* when (testType) {
+                TestType.INSTRUMENTATION -> arrayOf("assemble$variantName", "assemble${variant.name.capitalize()}")
+                TestType.ROBO -> arrayOf("assemble$variantName")
+            })
+            doFirst { configDataValidation() }
+            doLast {
+                val result = processCreator.callFirebaseTestLab(testType, device, apkSource)
+                processResult(result, extension.ignoreFailures)
+                resultDownloader.getResults()
+            }
+        })
+    }
+
+    private fun createGroupedTestLabTask(testType: TestType,
+                                         devices: List<Device>,
+                                         variant: TestVariant,
+                                         apkSource: ApkSource) {
+        val variantName = variant.testedVariant?.name?.capitalize() ?: ""
+
+        project.task("$variantName${testType.toString().toLowerCase().capitalize()}" + TASK_NAME_GROUPED, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB
             description = "Run Android Tests in Firebase Test Lab"
 
@@ -113,7 +137,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
         if (extension.cloudBucketName.isNullOrEmpty()) {
             throw GradleException(Constants.BUCKET_NAME_INVALID)
         }
-        if (extension.cloudDirectoryName.isNullOrEmpty()) {
+        if (extension.cloudDirectoryName.isEmpty()) {
             throw GradleException(Constants.RESULTS_TEST_DIR_NOT_VALID)
         }
         if (extension.devices.toList().isEmpty()) {

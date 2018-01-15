@@ -7,7 +7,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "gradle.plugin.firebase.test.lab:plugin:1.0.1.14"
+        classpath "gradle.plugin.firebase.test.lab:plugin:1.0.1.17"
     }
 }
 apply plugin: 'com.android.application'
