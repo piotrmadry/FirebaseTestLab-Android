@@ -7,7 +7,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "gradle.plugin.firebase.test.lab:plugin:1.0.1.22"
+        classpath "gradle.plugin.firebase.test.lab:plugin:1.0.4"
     }
 }
 apply plugin: 'com.android.application'
@@ -32,6 +32,7 @@ android {
         }
     }
 }
+
 
 firebaseTestLab {
     cloudSdkPath = "/Users/piotr/google-cloud-sdk/bin"

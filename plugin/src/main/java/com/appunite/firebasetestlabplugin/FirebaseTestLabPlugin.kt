@@ -127,6 +127,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             })
             doFirst { configDataValidation() }
             doLast {
+                if (extension!!.clearDirectoryBeforeRun) {
+                    resultDownloader.clearResultsDir()
+                }
                 devices.forEach { device ->
                     val result = processCreator.callFirebaseTestLab(testType, device, apkSource)
                     processResult(result, extension!!.ignoreFailures)
