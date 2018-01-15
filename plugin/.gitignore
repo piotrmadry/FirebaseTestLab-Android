@@ -10,6 +10,7 @@
 /.gradle/**
 /.android/**
 /local.properties
+/gradle.properties
 /build
 /com
 /api/build
