@@ -1,0 +1,2 @@
+rootProject.name = 'firebase-test-lab'
+rootProject.buildFileName = 'build.gradle.kts'

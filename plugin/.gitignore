@@ -1,0 +1,20 @@
+#Secrets
+/id_rsa
+/id_rsa.pub
+#IntelliJ IDEA
+/.idea/**
+*.iml
+
+# Gradle
+/.gradle/**
+/.android/**
+/local.properties
+/build
+/com
+/api/build
+/gen-libs/build
+/captures
+/projectFilesBackup
+
+# General
+.DS_Store
