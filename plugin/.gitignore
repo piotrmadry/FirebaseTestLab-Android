@@ -4,13 +4,12 @@
 #IntelliJ IDEA
 /.idea/**
 *.iml
-*.properties
 
 # Gradle
 /.gradle/**
 /.android/**
 /local.properties
-/gradle.properties
+gradle.properties
 /build
 /com
 /api/build
