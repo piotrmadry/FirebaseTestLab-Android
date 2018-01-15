@@ -4,6 +4,7 @@
 #IntelliJ IDEA
 /.idea/**
 *.iml
+*.properties
 
 # Gradle
 /.gradle/**

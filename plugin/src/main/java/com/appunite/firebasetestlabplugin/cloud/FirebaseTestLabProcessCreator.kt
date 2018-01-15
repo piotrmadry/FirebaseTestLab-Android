@@ -39,10 +39,10 @@ internal class FirebaseTestLabProcessCreator(private val gCloudBucketName: Strin
                 --type ${testType.toString().toLowerCase()}
                 --locales ${device.locales.joinArgs()},
                 --os-version-ids ${device.androidApiLevels.joinArgs()}
-                --orientations ${device.screenOrientations.joinArgs()}
+                --orientations ${device.screenOrientations.map { orientation -> orientation.toString().toLowerCase()}.joinArgs()}
                 --device-ids ${device.deviceIds.joinArgs()}
                 --app ${apkSource.apk}
-                ${if (testType == TestType.INSTUMENTATION) "--test ${apkSource.testApk}" else ""}
+                ${if (testType == TestType.INSTRUMENTATION) "--test ${apkSource.testApk}" else ""}
                 ${if (device.timeout > 0) "--timeoutSec ${device.timeout}s" else ""}
     """.asCommand())
 

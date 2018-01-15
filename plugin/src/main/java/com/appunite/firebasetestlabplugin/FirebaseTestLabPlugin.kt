@@ -71,7 +71,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
         (project.extensions.findByName(ANDROID) as AppExtension).apply {
             val variant = testVariants.toList()[0]
             val variantApk: ApkSource = VariantApkSource(variant)
-            createTestLabTask(TestType.INSTUMENTATION, devices, variant, variantApk)
+            createTestLabTask(TestType.INSTRUMENTATION, devices, variant, variantApk)
 //            createTestLabTask(TestType.ROBO, devices, variant, variantApk)
 //            testVariants.forEach { testVariant ->
 //                val variantApk: ApkSource = VariantApkSource(testVariant)
@@ -92,7 +92,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             description = "Run Android Tests in Firebase Test Lab"
 
             dependsOn(* when (testType) {
-                TestType.INSTUMENTATION -> arrayOf("assemble$variantName", "assemble${variant.name.capitalize()}")
+                TestType.INSTRUMENTATION -> arrayOf("assemble$variantName", "assemble${variant.name.capitalize()}")
                 TestType.ROBO -> arrayOf("assemble$variantName")
             })
             doFirst { configDataValidation() }
