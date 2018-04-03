@@ -8,6 +8,7 @@ import org.gradle.script.lang.kotlin.*
 plugins {
     `java-gradle-plugin`
     `kotlin-dsl`
+    `maven`
     id("com.gradle.plugin-publish") version "0.9.9"
 }
 

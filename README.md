@@ -50,6 +50,8 @@ List of available [devices](https://firebase.google.com/docs/test-lab/images/gcl
 
 ``` Goovy
 firebaseTestLab {
+    keyFile = file("keys.json")
+    googleProjectId = "your-project-id"
     cloudSdkPath = "/user/cloud-sdk/bin"
     cloudBucketName = "bucket-test"
     cloudDirectoryName = "androidTests"
