@@ -14,6 +14,10 @@ plugins {
 group = "firebase.test.lab"
 version = "1.0.4"
 
+repositories {
+    maven("https://repo.gradle.org/gradle/libs-releases-local/")
+}
+
 gradlePlugin {
     (plugins) {
         "FirebaseTestLabPlugin" {
@@ -42,6 +46,7 @@ dependencies {
     implementation(kotlin("stdlib", "1.1.2"))
     implementation("com.android.tools.build:gradle:3.0.1")
     testCompile("junit:junit-dep:4.11")
+    testCompile("org.gradle:gradle-kotlin-dsl:0.13.1")
 }
 
 
