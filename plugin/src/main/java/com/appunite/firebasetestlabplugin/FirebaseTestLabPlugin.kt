@@ -199,9 +199,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             downloader: CloudTestResultDownloader?) {
         val variantName = variant.testedVariant?.name?.capitalize() ?: ""
 
-        val cleanTask = "firebaseTestLabClean${variantName.capitalizeIt()}${testType.toString().capitalizeIt()}"
-        val runTestsTask = "firebaseTestLabExecute${variantName.capitalizeIt()}${testType.toString().capitalizeIt()}"
-        val downloadTask = "firebaseTestLabDownload${variantName.capitalizeIt()}${testType.toString().capitalizeIt()}"
+        val cleanTask = "firebaseTestLabClean${variantName.capitalize()}${testType.toString().toLowerCase().capitalize()}"
+        val runTestsTask = "firebaseTestLabExecute${variantName.capitalize()}${testType.toString().toLowerCase().capitalize()}"
+        val downloadTask = "firebaseTestLabDownload${variantName.capitalize()}${testType.toString().toLowerCase().capitalize()}"
 
         if (downloader != null) {
             project.task(cleanTask, closureOf<Task> {
