@@ -41,6 +41,7 @@ dependencies {
     compileOnly(gradleKotlinDsl())
     implementation(kotlin("stdlib", "1.1.2"))
     implementation("com.android.tools.build:gradle:3.0.1")
+    testCompile("junit:junit-dep:4.11")
 }
 
 
