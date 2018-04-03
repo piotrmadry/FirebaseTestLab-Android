@@ -10,7 +10,6 @@ import com.appunite.firebasetestlabplugin.model.TestType
 import com.appunite.firebasetestlabplugin.utils.ApkSource
 import com.appunite.firebasetestlabplugin.utils.Constants
 import com.appunite.firebasetestlabplugin.utils.VariantApkSource
-import com.appunite.firebasetestlabplugin.utils.capitalizeIt
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.*
 import org.gradle.api.tasks.Exec
