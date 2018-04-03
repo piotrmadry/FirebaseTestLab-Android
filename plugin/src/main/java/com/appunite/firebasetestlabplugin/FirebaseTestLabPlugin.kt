@@ -26,14 +26,13 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             standardOutput = ByteArrayOutputStream()
             errorOutput = standardOutput
             isIgnoreExitValue = true
-        }
 
-        override fun doLast(action: Action<*>): Task {
-            if (execResult.exitValue != 0) {
-                println(standardOutput.toString())
-                throw GradleException("exec failed; see output above")
+            doLast {
+                if (execResult.exitValue != 0) {
+                    println(standardOutput.toString())
+                    throw GradleException("exec failed; see output above")
+                }
             }
-            return super.doLast(action)
         }
     }
 
@@ -92,7 +91,8 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 }
 
                 project.logger.lifecycle("gCloud sdk installation dir: $installDir")
-                val sdkPath = File(File(installDir, "google-cloud-sdk"), "bin")
+                val cloudSdkDir = File(installDir, "google-cloud-sdk")
+                val sdkPath = File(cloudSdkDir, "bin")
                 project.logger.lifecycle("gCloud sdk path: $sdkPath")
 
                 val gcloud = File(sdkPath, Constants.GCLOUD)
@@ -110,7 +110,11 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                                     "}")
                         }
                     }
-                    commandLine = listOf("bash", "-c", "export CLOUDSDK_CORE_DISABLE_PROMPTS=1 && export CLOUDSDK_INSTALL_DIR=\"${installDir.absolutePath}\" && curl https://sdk.cloud.google.com | bash")
+                    commandLine = listOf("bash", "-c", "rm -r \"${cloudSdkDir.absolutePath}\";export CLOUDSDK_CORE_DISABLE_PROMPTS=1 && export CLOUDSDK_INSTALL_DIR=\"${installDir.absolutePath}\" && curl https://sdk.cloud.google.com | bash")
+                    doLast {
+                        if (!gcloud.exists()) throw IllegalStateException("Installation failed")
+                        if (!gsutil.exists()) throw IllegalStateException("Installation failed")
+                    }
                 })
                 Sdk(gcloud, gsutil)
             }
