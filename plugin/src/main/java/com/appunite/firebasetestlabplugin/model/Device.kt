@@ -9,14 +9,6 @@ class Device(val name: String) {
 
     var testUniversalApk: Boolean = true
 
-    fun filterAbis(vararg filter: String) {
-        abiSplits = setOf(*filter)
-        filterAbiSplits = true
-    }
-    fun filterAbis(filter: Set<String>) {
-        abiSplits = filter
-        filterAbiSplits = true
-    }
     var filterAbiSplits = false
     var abiSplits: Set<String> = setOf()
 }

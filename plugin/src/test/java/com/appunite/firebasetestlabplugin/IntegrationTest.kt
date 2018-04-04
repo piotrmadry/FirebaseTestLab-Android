@@ -254,7 +254,7 @@ class IntegrationTest {
             keyFile = File(simpleProject, "key.json")
             createDevice("myDevice", {
                 deviceIds = listOf("Nexus6")
-                filterAbis()
+                filterAbiSplits = true
             })
         }
         (project as ProjectInternal).evaluate()

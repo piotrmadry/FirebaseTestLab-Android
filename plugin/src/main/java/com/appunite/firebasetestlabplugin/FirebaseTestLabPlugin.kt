@@ -73,6 +73,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 val gsutil = File(sdkPath, Constants.GSUTIL)
 
                 project.task(ensureGCloudSdk, {
+                    group = Constants.FIREBASE_TEST_LAB
+                    description = "Check if google cloud sdk is installed"
+
                     doFirst {
                         if (!gcloud.exists()) {
                             throw IllegalStateException("gcloud does not exist in path ${sdkPath.absoluteFile}, but downloading is not supported on Windows")
@@ -99,6 +102,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 val gsutil = File(sdkPath, Constants.GSUTIL)
 
                 project.createTask(ensureGCloudSdk, HiddenExec::class, {
+                    group = Constants.FIREBASE_TEST_LAB
+                    description = "Install google cloud SDK if necessary"
+
                     outputs.files(gcloud, gsutil)
                     doFirst {
                         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
@@ -127,6 +133,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             val sdk = createDownloadSdkTask(project, cloudSdkPath)
 
             project.createTask(taskAuth, HiddenExec::class, {
+                group = Constants.FIREBASE_TEST_LAB
+                description = "Authorize google cloud sdk"
+
                 dependsOn(ensureGCloudSdk)
                 val keyFile = keyFile
                 doFirst {
@@ -139,6 +148,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 commandLine = listOf(sdk.gcloud.absolutePath, "auth", "activate-service-account", "--key-file=${keyFile?.absolutePath}")
             })
             project.createTask(taskSetProject, HiddenExec::class, {
+                group = Constants.FIREBASE_TEST_LAB
+                description = "Configure google cloud sdk project"
+
                 dependsOn(ensureGCloudSdk)
                 doFirst {
                     if (googleProjectId == null) {
@@ -148,6 +160,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 commandLine = listOf(sdk.gcloud.absolutePath, "config", "set", "project", "$googleProjectId")
             })
             project.task(taskSetup, {
+                group = Constants.FIREBASE_TEST_LAB
+                description = "Setup and configure google cloud sdk"
+
                 dependsOn(taskSetProject)
                 dependsOn(taskAuth)
             })
@@ -176,9 +191,6 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                     cloudDirectoryName,
                     project.logger
             )
-
-
-
 
             (project.extensions.findByName(ANDROID) as AppExtension).apply {
                 testVariants.toList().forEach { testVariant ->
@@ -209,7 +221,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
         if (downloader != null) {
             project.task(cleanTask, closureOf<Task> {
                 group = Constants.FIREBASE_TEST_LAB
-                description = "Clean test lab artifacts"
+                description = "Clean test lab artifacts on google storage"
                 dependsOn(taskSetup)
                 doLast {
                     downloader.clearResultsDir()
@@ -257,6 +269,8 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 }
 
         project.task(runTestsTask, closureOf<Task> {
+            group = Constants.FIREBASE_TEST_LAB
+            description = "Run Android Tests in Firebase Test Lab"
             dependsOn(tasks)
 
             doFirst {
@@ -278,7 +292,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
         if (downloader != null) {
             project.task(downloadTask, closureOf<Task> {
                 group = Constants.FIREBASE_TEST_LAB
-                description = "Run Android Tests in Firebase Test Lab and download artifacts"
+                description = "Run Android Tests in Firebase Test Lab and download artifacts from google storage"
                 dependsOn(taskSetup)
                 dependsOn(runTestsTask)
                 mustRunAfter(cleanTask)
