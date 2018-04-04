@@ -212,7 +212,8 @@ class IntegrationTest {
             keyFile = File(simpleProject, "key.json")
             createDevice("myDevice", {
                 deviceIds = listOf("Nexus6")
-                filterAbis("armeabi-v7a")
+                filterAbiSplits = true
+                abiSplits = setOf("armeabi-v7a")
                 testUniversalApk = false
             })
         }

@@ -221,9 +221,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 .filter {
                     val hasAbiSplits = it.apk.filterTypes.contains(VariantOutput.ABI)
                     if (hasAbiSplits) {
-                        if (it.device.doAbiSplits) {
+                        if (it.device.filterAbiSplits) {
                             val abi = it.apk.filters.first { it.filterType == VariantOutput.ABI }.identifier
-                            it.device.abisSplits.contains(abi)
+                            it.device.abiSplits.contains(abi)
                         } else {
                             true
                         }
