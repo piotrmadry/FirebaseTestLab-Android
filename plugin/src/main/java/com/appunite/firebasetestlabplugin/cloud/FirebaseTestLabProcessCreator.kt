@@ -6,6 +6,7 @@ import com.appunite.firebasetestlabplugin.model.TestResults
 import com.appunite.firebasetestlabplugin.model.TestType
 import com.appunite.firebasetestlabplugin.utils.*
 import org.gradle.api.logging.Logger
+import java.io.File
 
 
 internal class FirebaseTestLabProcessCreator(
@@ -25,7 +26,7 @@ internal class FirebaseTestLabProcessCreator(
             20 to "A test infrastructure error occurred."
     )
 
-    fun callFirebaseTestLab(testType: TestType, device: Device, apkSource: ApkSource): TestResults {
+    fun callFirebaseTestLab(testType: TestType, device: Device, apk: File, testApk: File): TestResults {
 
         val processBuilder = ProcessBuilder("""
         ${sdk.gcloud.absolutePath}
@@ -38,8 +39,8 @@ internal class FirebaseTestLabProcessCreator(
                 --os-version-ids ${device.androidApiLevels.joinArgs()}
                 --orientations ${device.screenOrientations.map { orientation -> orientation.gcloudName}.joinArgs()}
                 --device-ids ${device.deviceIds.joinArgs()}
-                --app ${apkSource.apk}
-                ${if (testType == TestType.INSTRUMENTATION) "--test ${apkSource.testApk}" else ""}
+                --app $apk
+                ${if (testType == TestType.INSTRUMENTATION) "--test $testApk" else ""}
                 ${if (device.timeout > 0) "--timeoutSec ${device.timeout}s" else ""}
     """.asCommand())
         val process = processBuilder.start()

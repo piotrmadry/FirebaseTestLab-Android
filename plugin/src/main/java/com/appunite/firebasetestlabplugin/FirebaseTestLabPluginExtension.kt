@@ -3,6 +3,7 @@ package com.appunite.firebasetestlabplugin
 import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.ResultTypes
 import groovy.lang.Closure
+import org.gradle.api.Action
 import org.gradle.api.Project
 import java.io.File
 
@@ -22,9 +23,10 @@ open class FirebaseTestLabPluginExtension(private val project: Project) {
     var clearDirectoryBeforeRun = false
     var ignoreFailures: Boolean = false
 
-    val devices = project.container(Device::class.java)
+    internal val devices = project.container(Device::class.java)
     val resultsTypes: ResultTypes = ResultTypes()
 
+    fun createDevice(name: String, action: Device.() -> Unit): Device = devices.create(name, action)
     fun devices(closure: Closure<Device>) {
         devices.configure(closure)
     }

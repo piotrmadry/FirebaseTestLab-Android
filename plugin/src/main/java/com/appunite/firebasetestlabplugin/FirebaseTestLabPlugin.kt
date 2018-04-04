@@ -1,15 +1,15 @@
 package com.appunite.firebasetestlabplugin
 
+import com.android.build.VariantOutput
 import com.android.build.gradle.AppExtension
+import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.appunite.firebasetestlabplugin.cloud.CloudTestResultDownloader
 import com.appunite.firebasetestlabplugin.cloud.FirebaseTestLabProcessCreator
 import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.TestResults
 import com.appunite.firebasetestlabplugin.model.TestType
-import com.appunite.firebasetestlabplugin.utils.ApkSource
 import com.appunite.firebasetestlabplugin.utils.Constants
-import com.appunite.firebasetestlabplugin.utils.VariantApkSource
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.*
 import org.gradle.api.tasks.Exec
@@ -104,10 +104,10 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                             throw IllegalStateException("Fetching gcloud and gsutil is not supported on Windows. " +
                                     "You need to install it manually. Look for instructions: https://cloud.google.com/sdk/downloads#windows ." +
-                                    "Than you need to set " +
-                                    "firebaseTestLab {" +
-                                    "  cloudSdkPath = \"Xyz\"" +
-                                    "}")
+                                    "Than you need to set:\n " +
+                                    "firebaseTestLab {\n" +
+                                    "  cloudSdkPath = \"Xyz\"\n" +
+                                    "}\n")
                         }
                     }
                     commandLine = listOf("bash", "-c", "rm -r \"${cloudSdkDir.absolutePath}\";export CLOUDSDK_CORE_DISABLE_PROMPTS=1 && export CLOUDSDK_INSTALL_DIR=\"${installDir.absolutePath}\" && curl https://sdk.cloud.google.com | bash")
@@ -131,7 +131,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 val keyFile = keyFile
                 doFirst {
                     if (keyFile == null) {
-                        throw GradleException("You need to set firebaseTestLab.keyFile = file(\"file.json\") before run")
+                        throw GradleException("You need to set firebaseTestLab.keyFile = file(\"key-file.json\") before run")
                     } else if (!keyFile.exists()) {
                         throw GradleException("Key file (${keyFile.absolutePath} does not exists")
                     }
@@ -182,9 +182,8 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
 
             (project.extensions.findByName(ANDROID) as AppExtension).apply {
                 testVariants.toList().forEach { testVariant ->
-                    val variantApk: ApkSource = VariantApkSource(testVariant)
-                    createGroupedTestLabTask(TestType.INSTRUMENTATION, devices, testVariant, variantApk, firebaseTestLabProcessCreator, ignoreFailures, downloader)
-                    createGroupedTestLabTask(TestType.ROBO, devices, testVariant, variantApk, firebaseTestLabProcessCreator, ignoreFailures, downloader)
+                    createGroupedTestLabTask(TestType.INSTRUMENTATION, devices, testVariant, firebaseTestLabProcessCreator, ignoreFailures, downloader)
+                    createGroupedTestLabTask(TestType.ROBO, devices, testVariant, firebaseTestLabProcessCreator, ignoreFailures, downloader)
                 }
             }
 
@@ -192,11 +191,12 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
         }
     }
 
+    data class Test(val device: Device, val apk: BaseVariantOutput, val testApk: BaseVariantOutput)
+
     private fun createGroupedTestLabTask(
             testType: TestType,
             devices: List<Device>,
             variant: TestVariant,
-            apkSource: ApkSource,
             firebaseTestLabProcessCreator: FirebaseTestLabProcessCreator,
             ignoreFailures: Boolean,
             downloader: CloudTestResultDownloader?) {
@@ -216,22 +216,62 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 }
             })
         }
-        project.task(runTestsTask, closureOf<Task> {
-            group = Constants.FIREBASE_TEST_LAB
-            description = "Run Android Tests in Firebase Test Lab"
-            if (downloader != null) {
-                mustRunAfter(cleanTask)
-            }
-            dependsOn(taskSetup)
-            dependsOn(* when (testType) {
-                TestType.INSTRUMENTATION -> arrayOf("assemble$variantName", "assemble${variant.name.capitalize()}")
-                TestType.ROBO -> arrayOf("assemble$variantName")
-            })
-            doLast {
-                devices.forEach { device ->
-                    val result = firebaseTestLabProcessCreator.callFirebaseTestLab(testType, device, apkSource)
-                    processResult(result, ignoreFailures)
+
+        val tasks = combineAll(devices, variant.testedVariant.outputs, variant.outputs, ::Test)
+                .filter {
+                    val hasAbiSplits = it.apk.filterTypes.contains(VariantOutput.ABI)
+                    if (hasAbiSplits) {
+                        if (it.device.doAbiSplits) {
+                            val abi = it.apk.filters.first { it.filterType == VariantOutput.ABI }.identifier
+                            it.device.abisSplits.contains(abi)
+                        } else {
+                            true
+                        }
+                    } else {
+                        it.device.testUniversalApk
+                    }
                 }
+                .map {
+                    test ->
+                    val devicePart = test.device.name.capitalize()
+                    val apkPart = dashToCamelCase(test.apk.name).capitalize()
+                    val testApkPart = test.testApk.let { if (it.filters.isEmpty()) "" else dashToCamelCase(it.name).capitalize() }
+                    val taskName = "$runTestsTask$devicePart$apkPart$testApkPart"
+                    project.task(taskName, closureOf<Task> {
+                        inputs.files(test.testApk.outputFile, test.apk.outputFile)
+                        group = Constants.FIREBASE_TEST_LAB
+                        description = "Run Android Tests in Firebase Test Lab"
+                        if (downloader != null) {
+                            mustRunAfter(cleanTask)
+                        }
+                        dependsOn(taskSetup)
+                        dependsOn(* when (testType) {
+                            TestType.INSTRUMENTATION -> arrayOf(test.apk.assemble, test.testApk.assemble)
+                            TestType.ROBO -> arrayOf(test.apk.assemble)
+                        })
+                        doLast {
+                            val result = firebaseTestLabProcessCreator.callFirebaseTestLab(testType, test.device, test.apk.outputFile, test.testApk.outputFile)
+                            processResult(result, ignoreFailures)
+                        }
+                    })
+                }
+
+        project.task(runTestsTask, closureOf<Task> {
+            dependsOn(tasks)
+
+            doFirst {
+                if (devices.isEmpty()) throw IllegalStateException("You need to set et least one device in:\n" +
+                        "firebaseTestLab {" +
+                        "  devices {\n" +
+                        "    nexus6 {\n" +
+                        "      androidApiLevels = [21]\n" +
+                        "      deviceIds = [\"Nexus6\"]\n" +
+                        "      locales = [\"en\"]\n" +
+                        "    }\n" +
+                        "  } " +
+                        "}")
+
+                if (tasks.isEmpty()) throw IllegalStateException("Nothing match your filter")
             }
         })
 
@@ -262,3 +302,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
         }
     }
 }
+
+private fun <T1, T2, T3, R> combineAll(l1: Collection<T1>, l2: Collection<T2>, l3: Collection<T3>, func: (T1, T2, T3) -> R): List<R> =
+        l1.flatMap { t1 -> l2.flatMap { t2 -> l3.map { t3 -> func(t1, t2, t3) } } }
+
+private fun dashToCamelCase(dash: String): String =
+        dash.split('-', '_').joinToString("") { it.capitalize() }
