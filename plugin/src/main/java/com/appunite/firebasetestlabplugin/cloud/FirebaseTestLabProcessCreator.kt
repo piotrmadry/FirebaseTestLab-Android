@@ -3,11 +3,14 @@ package com.appunite.firebasetestlabplugin.cloud
 import com.appunite.firebasetestlabplugin.FirebaseTestLabPlugin
 import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.TestResults
-import com.appunite.firebasetestlabplugin.model.TestType
 import com.appunite.firebasetestlabplugin.utils.*
 import org.gradle.api.logging.Logger
 import java.io.File
 
+sealed class TestType {
+    object Robo : TestType()
+    data class Instrumentation(val testApk: File) : TestType()
+}
 
 internal class FirebaseTestLabProcessCreator(
         private val sdk: FirebaseTestLabPlugin.Sdk,
@@ -26,7 +29,11 @@ internal class FirebaseTestLabProcessCreator(
             20 to "A test infrastructure error occurred."
     )
 
-    fun callFirebaseTestLab(testType: TestType, device: Device, apk: File, testApk: File): TestResults {
+    fun callFirebaseTestLab(device: Device, apk: File, testType: TestType): TestResults {
+        val type = when (testType) {
+            TestType.Robo -> "--type robo"
+            is TestType.Instrumentation -> "--instrumentation instrumentation --test ${testType.testApk}"
+        }
 
         val processBuilder = ProcessBuilder("""
         ${sdk.gcloud.absolutePath}
@@ -34,13 +41,12 @@ internal class FirebaseTestLabProcessCreator(
                 --format json
                 ${if (gCloudBucketName != null) "--results-bucket $gCloudBucketName" else ""}
                 ${if (gCloudDirectory != null) "--results-dir $gCloudDirectory" else ""}
-                --type ${testType.gcloudName}
+                $type
                 --locales ${device.locales.joinArgs()},
                 --os-version-ids ${device.androidApiLevels.joinArgs()}
-                --orientations ${device.screenOrientations.map { orientation -> orientation.gcloudName}.joinArgs()}
+                --orientations ${device.screenOrientations.map { orientation -> orientation.gcloudName }.joinArgs()}
                 --device-ids ${device.deviceIds.joinArgs()}
                 --app $apk
-                ${if (testType == TestType.INSTRUMENTATION) "--test $testApk" else ""}
                 ${if (device.timeout > 0) "--timeoutSec ${device.timeout}s" else ""}
     """.asCommand())
         val process = processBuilder.start()

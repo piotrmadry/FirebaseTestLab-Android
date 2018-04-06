@@ -6,9 +6,9 @@ import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.appunite.firebasetestlabplugin.cloud.CloudTestResultDownloader
 import com.appunite.firebasetestlabplugin.cloud.FirebaseTestLabProcessCreator
+import com.appunite.firebasetestlabplugin.cloud.TestType
 import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.TestResults
-import com.appunite.firebasetestlabplugin.model.TestType
 import com.appunite.firebasetestlabplugin.utils.Constants
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.*
@@ -194,8 +194,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
 
             (project.extensions.findByName(ANDROID) as AppExtension).apply {
                 testVariants.toList().forEach { testVariant ->
-                    createGroupedTestLabTask(TestType.INSTRUMENTATION, devices, testVariant, firebaseTestLabProcessCreator, ignoreFailures, downloader)
-                    createGroupedTestLabTask(TestType.ROBO, devices, testVariant, firebaseTestLabProcessCreator, ignoreFailures, downloader)
+                    createGroupedTestLabTask(devices, testVariant, firebaseTestLabProcessCreator, ignoreFailures, downloader)
                 }
             }
 
@@ -203,10 +202,11 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
         }
     }
 
+    data class DeviceAppMap(val device: Device, val apk: BaseVariantOutput)
+
     data class Test(val device: Device, val apk: BaseVariantOutput, val testApk: BaseVariantOutput)
 
     private fun createGroupedTestLabTask(
-            testType: TestType,
             devices: List<Device>,
             variant: TestVariant,
             firebaseTestLabProcessCreator: FirebaseTestLabProcessCreator,
@@ -214,9 +214,12 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             downloader: CloudTestResultDownloader?) {
         val variantName = variant.testedVariant?.name?.capitalize() ?: ""
 
-        val cleanTask = "firebaseTestLabClean${variantName.capitalize()}${testType.toString().toLowerCase().capitalize()}"
-        val runTestsTask = "firebaseTestLabExecute${variantName.capitalize()}${testType.toString().toLowerCase().capitalize()}"
-        val downloadTask = "firebaseTestLabDownload${variantName.capitalize()}${testType.toString().toLowerCase().capitalize()}"
+        val cleanTask = "firebaseTestLabClean${variantName.capitalize()}"
+
+        val runTestsTask = "firebaseTestLabExecute${variantName.capitalize()}"
+        val runTestsTaskInstrumentation = "${runTestsTask}Instrumentation"
+        val runTestsTaskRobo = "${runTestsTask}Robo"
+        val downloadTask = "firebaseTestLabDownload${variantName.capitalize()}"
 
         if (downloader != null) {
             project.task(cleanTask, closureOf<Task> {
@@ -229,7 +232,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             })
         }
 
-        val tasks = combineAll(devices, variant.testedVariant.outputs, variant.outputs, ::Test)
+        val appVersions = combineAll(devices, variant.testedVariant.outputs, ::DeviceAppMap)
                 .filter {
                     val hasAbiSplits = it.apk.filterTypes.contains(VariantOutput.ABI)
                     if (hasAbiSplits) {
@@ -243,35 +246,55 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                         it.device.testUniversalApk
                     }
                 }
+        val roboTasks = appVersions
                 .map {
                     test ->
                     val devicePart = test.device.name.capitalize()
                     val apkPart = dashToCamelCase(test.apk.name).capitalize()
-                    val testApkPart = test.testApk.let { if (it.filters.isEmpty()) "" else dashToCamelCase(it.name).capitalize() }
-                    val taskName = "$runTestsTask$devicePart$apkPart$testApkPart"
+                    val taskName = "$runTestsTaskRobo$devicePart$apkPart"
                     project.task(taskName, closureOf<Task> {
-                        inputs.files(test.testApk.outputFile, test.apk.outputFile)
+                        inputs.files(test.apk.outputFile)
                         group = Constants.FIREBASE_TEST_LAB
-                        description = "Run Android Tests in Firebase Test Lab"
+                        description = "Run Robo test for ${test.device.name} device on $variantName/${test.apk.name} in Firebase Test Lab"
                         if (downloader != null) {
                             mustRunAfter(cleanTask)
                         }
                         dependsOn(taskSetup)
-                        dependsOn(* when (testType) {
-                            TestType.INSTRUMENTATION -> arrayOf(test.apk.assemble, test.testApk.assemble)
-                            TestType.ROBO -> arrayOf(test.apk.assemble)
-                        })
+                        dependsOn(arrayOf(test.apk.assemble))
                         doLast {
-                            val result = firebaseTestLabProcessCreator.callFirebaseTestLab(testType, test.device, test.apk.outputFile, test.testApk.outputFile)
+                            val result = firebaseTestLabProcessCreator.callFirebaseTestLab(test.device, test.apk.outputFile, TestType.Robo)
                             processResult(result, ignoreFailures)
                         }
                     })
                 }
 
-        project.task(runTestsTask, closureOf<Task> {
+        val instrumentationTasks = combineAll(appVersions, variant.outputs, {deviceAndMap, testApk -> Test(deviceAndMap.device, deviceAndMap.apk, testApk)})
+                .map {
+                    test ->
+                    val devicePart = test.device.name.capitalize()
+                    val apkPart = dashToCamelCase(test.apk.name).capitalize()
+                    val testApkPart = test.testApk.let { if (it.filters.isEmpty()) "" else dashToCamelCase(it.name).capitalize() }
+                    val taskName = "$runTestsTaskInstrumentation$devicePart$apkPart$testApkPart"
+                    project.task(taskName, closureOf<Task> {
+                        inputs.files(test.testApk.outputFile, test.apk.outputFile)
+                        group = Constants.FIREBASE_TEST_LAB
+                        description = "Run Instrumentation test for ${test.device.name} device on $variantName/${test.apk.name} in Firebase Test Lab"
+                        if (downloader != null) {
+                            mustRunAfter(cleanTask)
+                        }
+                        dependsOn(taskSetup)
+                        dependsOn(arrayOf(test.apk.assemble, test.testApk.assemble))
+                        doLast {
+                            val result = firebaseTestLabProcessCreator.callFirebaseTestLab(test.device, test.apk.outputFile, TestType.Instrumentation(test.testApk.outputFile))
+                            processResult(result, ignoreFailures)
+                        }
+                    })
+                }
+
+        val allInstrumentation = project.task(runTestsTaskInstrumentation, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB
-            description = "Run Android Tests in Firebase Test Lab"
-            dependsOn(tasks)
+            description = "Run all Instrumentation tests for $variantName in Firebase Test Lab"
+            dependsOn(instrumentationTasks)
 
             doFirst {
                 if (devices.isEmpty()) throw IllegalStateException("You need to set et least one device in:\n" +
@@ -285,8 +308,35 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                         "  } " +
                         "}")
 
-                if (tasks.isEmpty()) throw IllegalStateException("Nothing match your filter")
+                if (instrumentationTasks.isEmpty()) throw IllegalStateException("Nothing match your filter")
             }
+        })
+
+        val allRobo = project.task(runTestsTaskRobo, closureOf<Task> {
+            group = Constants.FIREBASE_TEST_LAB
+            description = "Run all Robo tests for $variantName in Firebase Test Lab"
+            dependsOn(roboTasks)
+
+            doFirst {
+                if (devices.isEmpty()) throw IllegalStateException("You need to set et least one device in:\n" +
+                        "firebaseTestLab {" +
+                        "  devices {\n" +
+                        "    nexus6 {\n" +
+                        "      androidApiLevels = [21]\n" +
+                        "      deviceIds = [\"Nexus6\"]\n" +
+                        "      locales = [\"en\"]\n" +
+                        "    }\n" +
+                        "  } " +
+                        "}")
+
+                if (roboTasks.isEmpty()) throw IllegalStateException("Nothing match your filter")
+            }
+        })
+
+        project.task(runTestsTask, closureOf<Task> {
+            group = Constants.FIREBASE_TEST_LAB
+            description = "Run all tests for $variantName in Firebase Test Lab"
+            dependsOn(allRobo, allInstrumentation)
         })
 
         if (downloader != null) {
@@ -309,7 +359,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             project.logger.lifecycle(result.message)
         } else {
             if (ignoreFailures) {
-                project.logger.error(Constants.ERROR + result.message)
+                project.logger.error("Error: ${result.message}")
             } else {
                 throw GradleException(result.message)
             }
@@ -317,8 +367,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
     }
 }
 
-private fun <T1, T2, T3, R> combineAll(l1: Collection<T1>, l2: Collection<T2>, l3: Collection<T3>, func: (T1, T2, T3) -> R): List<R> =
-        l1.flatMap { t1 -> l2.flatMap { t2 -> l3.map { t3 -> func(t1, t2, t3) } } }
+
+private fun <T1, T2, R> combineAll(l1: Collection<T1>, l2: Collection<T2>, func: (T1, T2) -> R): List<R> =
+        l1.flatMap { t1 -> l2.map { t2 -> func(t1, t2)} }
 
 private fun dashToCamelCase(dash: String): String =
         dash.split('-', '_').joinToString("") { it.capitalize() }

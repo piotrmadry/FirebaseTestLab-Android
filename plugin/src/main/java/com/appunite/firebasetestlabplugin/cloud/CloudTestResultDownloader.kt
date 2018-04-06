@@ -2,7 +2,6 @@ package com.appunite.firebasetestlabplugin.cloud
 
 import com.appunite.firebasetestlabplugin.FirebaseTestLabPlugin
 import com.appunite.firebasetestlabplugin.model.ResultTypes
-import com.appunite.firebasetestlabplugin.utils.Constants
 import com.appunite.firebasetestlabplugin.utils.asCommand
 import org.gradle.api.GradleException
 import org.gradle.api.logging.Logger
@@ -22,7 +21,7 @@ internal class CloudTestResultDownloader(
             return
         }
         val gCloudFullPath = "$gCloudBucketName/$gCloudDirectory"
-        logger.lifecycle(Constants.DOWNLOAD_PHASE + "Downloading results from $gCloudFullPath")
+        logger.lifecycle("DOWNLOAD: Downloading results from $gCloudFullPath")
 
         prepareDownloadDirectory()
         downloadTestResults()
