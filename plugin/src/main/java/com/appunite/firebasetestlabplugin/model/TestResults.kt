@@ -1,3 +1,3 @@
 package com.appunite.firebasetestlabplugin.model
 
-data class TestResults(val isSuccessful: Boolean, val resultDir: String?, val message: String)
+data class TestResults(val isSuccessful: Boolean, val message: String)

@@ -1,0 +1,94 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+// apply firebase test lab plugin (after `apply plugin: 'com.android.application'` )
+apply plugin: 'firebase.test.lab'
+
+android {
+    compileSdkVersion 26
+    defaultConfig {
+        applicationId "com.appunite.firebaselab_plugin"
+        minSdkVersion 20
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+// Setup firebase test lab plugin
+firebaseTestLab {
+    // REQUIRED obtain service key as described inside README
+    keyFile = file("test-lab-key.json")
+    // REQUIRED setup google project id ad described inside README
+    googleProjectId = "your-project-app-id"
+
+    // If you want you can ignore test failures
+    // ignoreFailures = true
+
+    // If you prefer you can use your custom google storage bucket for storing build sources and results
+    // cloudBucketName = "your-custome-google-storage-bucket-name"
+    // cloudDirectoryName = "your-custome-directory-name"
+
+    // If you prefer to install gcloud tool manually you can set path by
+    // cloudSdkPath = "/user/cloud-sdk/bin"
+
+    // If you want to change default gcloud installation path (default is in build/gcloud directory)
+    // you can set environment variable `export CLOUDSDK_INSTALL_DIR=`/cache/your_directory/`
+
+    // REQUIRED
+    devices {
+        // REQUIRED add at least one device
+        nexusEmulator {
+            // REQUIRED Choose at least one device id
+            // you can list all available via `gcloud firebase test android models list`
+            deviceIds = ["Nexus6"]
+
+            // REQUIRED Choose at least one API level
+            // you can list all available via `gcloud firebase test android models list` for your device model
+            androidApiLevels = [26]
+
+            // You can test app in landscape and portrait
+            // screenOrientations = [com.appunite.firebasetestlabplugin.model.ScreenOrientation.PORTRAIT, com.appunite.firebasetestlabplugin.model.ScreenOrientation.LANDSCAPE]
+
+            // Choose language (default is `en`)
+            // you can list all available via `gcloud firebase test android locales list`
+            // locales = ["en"]
+
+            // If you are using ABI splits you can filter selected abi
+            // filterAbiSplits = true
+            // abiSplits = ["armeabi-v7a", "arm64-v8a", "x86", "x86_64"]
+
+            // If you are using ABI splits you can remove testing universal APK
+            // testUniversalApk = false
+
+            // You can set timeout (in seconds) for test
+            // timeout = 6000
+        }
+        // You can define more devices
+        someOtherDevices {
+            deviceIds = ["hammerhead", "shamu"]
+            androidApiLevels = [21]
+        }
+    }
+}
+
+// To see available build tasks run
+// ./gradlew :app:tasks
+// Choose from `Firebase Test Lab tasks`, like: ./gradlew :app:firebaseTestLabExecuteDebugInstrumentationNexusEmulatorDebug
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+}

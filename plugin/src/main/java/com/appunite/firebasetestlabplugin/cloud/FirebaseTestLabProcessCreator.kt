@@ -1,21 +1,22 @@
 package com.appunite.firebasetestlabplugin.cloud
 
+import com.appunite.firebasetestlabplugin.FirebaseTestLabPlugin
 import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.TestResults
-import com.appunite.firebasetestlabplugin.model.TestType
-import com.appunite.firebasetestlabplugin.utils.ApkSource
-import com.appunite.firebasetestlabplugin.utils.Constants.Companion.RESULT_SUCCESSFUL
-import com.appunite.firebasetestlabplugin.utils.asCommand
-import com.appunite.firebasetestlabplugin.utils.command
-import com.appunite.firebasetestlabplugin.utils.joinArgs
+import com.appunite.firebasetestlabplugin.utils.*
 import org.gradle.api.logging.Logger
 import java.io.File
 
+sealed class TestType {
+    object Robo : TestType()
+    data class Instrumentation(val testApk: File) : TestType()
+}
 
-internal class FirebaseTestLabProcessCreator(private val gCloudBucketName: String?,
-                                             private val gCloudDirectory: String?,
-                                             private val gCloudSdkPath: File,
-                                             private val logger: Logger) {
+internal class FirebaseTestLabProcessCreator(
+        private val sdk: FirebaseTestLabPlugin.Sdk,
+        private val gCloudBucketName: String?,
+        private val gCloudDirectory: String?,
+        private val logger: Logger) {
 
     private val resultMessageMap = mapOf(
             0 to "All test executions passed.",
@@ -28,34 +29,33 @@ internal class FirebaseTestLabProcessCreator(private val gCloudBucketName: Strin
             20 to "A test infrastructure error occurred."
     )
 
-    fun callFirebaseTestLab(testType: TestType, device: Device, apkSource: ApkSource): TestResults {
+    fun callFirebaseTestLab(device: Device, apk: File, testType: TestType): TestResults {
+        val type = when (testType) {
+            TestType.Robo -> "--type robo"
+            is TestType.Instrumentation -> "--instrumentation instrumentation --test ${testType.testApk}"
+        }
 
         val processBuilder = ProcessBuilder("""
-        ${command("gcloud", gCloudSdkPath)}
+        ${sdk.gcloud.absolutePath}
                 firebase test android run
                 --format json
-                --results-bucket $gCloudBucketName
-                --results-dir $gCloudDirectory
-                --type ${testType.toString().toLowerCase()}
+                ${if (gCloudBucketName != null) "--results-bucket $gCloudBucketName" else ""}
+                ${if (gCloudDirectory != null) "--results-dir $gCloudDirectory" else ""}
+                $type
                 --locales ${device.locales.joinArgs()},
                 --os-version-ids ${device.androidApiLevels.joinArgs()}
-                --orientations ${device.screenOrientations.map { orientation -> orientation.toString().toLowerCase()}.joinArgs()}
+                --orientations ${device.screenOrientations.map { orientation -> orientation.gcloudName }.joinArgs()}
                 --device-ids ${device.deviceIds.joinArgs()}
-                --app ${apkSource.apk}
-                ${if (testType == TestType.INSTRUMENTATION) "--test ${apkSource.testApk}" else ""}
+                --app $apk
                 ${if (device.timeout > 0) "--timeoutSec ${device.timeout}s" else ""}
     """.asCommand())
-
         val process = processBuilder.start()
-        val gCloudFullPath = "$gCloudBucketName/$gCloudDirectory"
-
         process.errorStream.bufferedReader().forEachLine { logger.lifecycle(it) }
         process.inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
 
         val resultCode = process.waitFor()
         return TestResults(
-                isSuccessful = resultCode == RESULT_SUCCESSFUL,
-                resultDir = gCloudFullPath,
+                isSuccessful = resultCode == 0,
                 message = resultMessageMap[resultCode] ?: ""
         )
     }
