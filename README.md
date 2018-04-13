@@ -33,10 +33,12 @@ Firebase is actually the most popular developer tool platform, wchich handles al
    ```grovy
    buildscript {
        repositories {
-           maven { url 'https://jitpack.io' }
+           maven {
+              url "https://plugins.gradle.org/m2/"
+           }
        }
        dependencies {
-           classpath 'com.github.jacek-marchwicki:FirebaseTestLab-Android:<version_from_github_releases_tab'
+           classpath "gradle.plugin.firebase.test.lab:plugin:1.1.0"
        }
    }
    ```
