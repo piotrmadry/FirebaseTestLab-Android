@@ -8,16 +8,12 @@ buildscript {
         mavenCentral()
 
         maven { url 'https://jitpack.io' }
+        maven { url 'https://plugins.gradle.org/m2/' }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-
-        // Instead of following use version from github releases tab
-        // classpath 'com.github.jacek-marchwicki:FirebaseTestLab-Android:<version_from_github_releases_tab'
-        // i.e.
-        // classpath 'com.github.jacek-marchwicki:FirebaseTestLab-Android:0.0.1'
-        classpath 'com.github.jacek-marchwicki:FirebaseTestLab-Android:install-gcloud-0.0.4'
+        classpath 'gradle.plugin.firebase.test.lab:plugin:1.1.2'
     }
 }
 

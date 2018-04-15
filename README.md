@@ -26,7 +26,7 @@ Firebase is actually the most popular developer tool platform, wchich handles al
 
 #### Setup 
 
-1. If you don't have a Firebase project for your app, go to the []Firebase console](https://console.firebase.google.com/) and click Create New Project to create one now. You will need ownership or edit permissions in your project.
+1. If you don't have a Firebase project for your app, go to the [Firebase console](https://console.firebase.google.com/) and click Create New Project to create one now. You will need ownership or edit permissions in your project.
 2. Create a service account related with your firebase project with an Editor role in the [Google Cloud Platform console - IAM/Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts/)
 3. Copy `Project ID` from [Google Cloud Platform console - HOME](https://console.cloud.google.com/home)
 4. Add plugin to your root project `build.gradle`:
@@ -38,7 +38,7 @@ Firebase is actually the most popular developer tool platform, wchich handles al
            }
        }
        dependencies {
-           classpath "gradle.plugin.firebase.test.lab:plugin:1.1.0"
+           classpath "gradle.plugin.firebase.test.lab:plugin:1.1.2"
        }
    }
    ```
@@ -51,8 +51,8 @@ Firebase is actually the most popular developer tool platform, wchich handles al
         googleProjectId = "your-project-app-id"
         devices {
             nexusEmulator {
-                deviceIds = ["Nexus6"]
-                androidApiLevels = [26]
+                deviceIds = ["hammerhead"]
+                androidApiLevels = [23]
             }
         }
     }
@@ -100,11 +100,11 @@ firebaseTestLab {
         nexusEmulator {
             // REQUIRED Choose at least one device id
             // you can list all available via `gcloud firebase test android models list` or look on https://firebase.google.com/docs/test-lab/images/gcloud-device-list.png
-            deviceIds = ["Nexus6"]
+            deviceIds = ["hammerhead"]
 
             // REQUIRED Choose at least one API level
             // you can list all available via `gcloud firebase test android models list` for your device model
-            androidApiLevels = [26]
+            androidApiLevels = [23]
 
             // You can test app in landscape and portrait
             // screenOrientations = [com.appunite.firebasetestlabplugin.model.ScreenOrientation.PORTRAIT, com.appunite.firebasetestlabplugin.model.ScreenOrientation.LANDSCAPE]
@@ -125,7 +125,7 @@ firebaseTestLab {
         }
         // You can define more devices
         someOtherDevices {
-            deviceIds = ["hammerhead", "shamu"]
+            deviceIds = ["shamu", "flounder"]
             androidApiLevels = [21]
         }
     }
