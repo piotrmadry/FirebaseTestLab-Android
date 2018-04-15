@@ -15,6 +15,7 @@
 /gen-libs/build
 /captures
 /projectFilesBackup
+local.properties
 
 # General
 .DS_Store

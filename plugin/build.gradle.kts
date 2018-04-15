@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "firebase.test.lab"
-version = "1.0.4"
+version = "1.1.1"
 
 repositories {
     maven("https://repo.gradle.org/gradle/libs-releases-local/")
