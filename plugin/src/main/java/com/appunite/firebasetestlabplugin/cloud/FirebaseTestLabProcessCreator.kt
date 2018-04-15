@@ -3,7 +3,8 @@ package com.appunite.firebasetestlabplugin.cloud
 import com.appunite.firebasetestlabplugin.FirebaseTestLabPlugin
 import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.TestResults
-import com.appunite.firebasetestlabplugin.utils.*
+import com.appunite.firebasetestlabplugin.utils.asCommand
+import com.appunite.firebasetestlabplugin.utils.joinArgs
 import org.gradle.api.logging.Logger
 import java.io.File
 
@@ -32,7 +33,7 @@ internal class FirebaseTestLabProcessCreator(
     fun callFirebaseTestLab(device: Device, apk: File, testType: TestType): TestResults {
         val type = when (testType) {
             TestType.Robo -> "--type robo"
-            is TestType.Instrumentation -> "--instrumentation instrumentation --test ${testType.testApk}"
+            is TestType.Instrumentation -> "--type instrumentation --test ${testType.testApk}"
         }
 
         val processBuilder = ProcessBuilder("""
