@@ -16,6 +16,7 @@
 /captures
 /projectFilesBackup
 local.properties
+gradle.properties
 
 # General
 .DS_Store
