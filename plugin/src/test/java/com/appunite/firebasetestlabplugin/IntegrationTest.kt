@@ -20,10 +20,10 @@ class IntegrationTest {
         project.configure<AppExtension> {
             compileSdkVersion(27)
             defaultConfig {
-                versionCode = 1
-                versionName = "0.1"
-                setMinSdkVersion(27)
-                setTargetSdkVersion(27)
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
             }
         }
         (project as ProjectInternal).evaluate()
@@ -38,10 +38,10 @@ class IntegrationTest {
         project.configure<AppExtension> {
             compileSdkVersion(27)
             defaultConfig {
-                versionCode = 1
-                versionName = "0.1"
-                setMinSdkVersion(27)
-                setTargetSdkVersion(27)
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
             }
         }
         (project as ProjectInternal).evaluate()
@@ -61,10 +61,10 @@ class IntegrationTest {
         project.configure<AppExtension> {
             compileSdkVersion(27)
             defaultConfig {
-                versionCode = 1
-                versionName = "0.1"
-                setMinSdkVersion(27)
-                setTargetSdkVersion(27)
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
             }
         }
         project.configure<FirebaseTestLabPluginExtension> {
@@ -86,10 +86,10 @@ class IntegrationTest {
         project.configure<AppExtension> {
             compileSdkVersion(27)
             defaultConfig {
-                versionCode = 1
-                versionName = "0.1"
-                setMinSdkVersion(27)
-                setTargetSdkVersion(27)
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
             }
         }
         project.configure<FirebaseTestLabPluginExtension> {
@@ -115,17 +115,17 @@ class IntegrationTest {
         project.configure<AppExtension> {
             compileSdkVersion(27)
             defaultConfig {
-                versionCode = 1
-                versionName = "0.1"
-                setMinSdkVersion(27)
-                setTargetSdkVersion(27)
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
             }
             splits {
-                abi {
-                    isEnable = true
-                    reset()
-                    include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
-                    isUniversalApk = true
+                it.abi {
+                    it.isEnable = true
+                    it.reset()
+                    it.include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+                    it.isUniversalApk = true
                 }
             }
         }
@@ -154,17 +154,17 @@ class IntegrationTest {
         project.configure<AppExtension> {
             compileSdkVersion(27)
             defaultConfig {
-                versionCode = 1
-                versionName = "0.1"
-                setMinSdkVersion(27)
-                setTargetSdkVersion(27)
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
             }
             splits {
-                abi {
-                    isEnable = true
-                    reset()
-                    include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
-                    isUniversalApk = false
+                it.abi {
+                    it.isEnable = true
+                    it.reset()
+                    it.include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+                    it.isUniversalApk = false
                 }
             }
         }
@@ -193,17 +193,17 @@ class IntegrationTest {
         project.configure<AppExtension> {
             compileSdkVersion(27)
             defaultConfig {
-                versionCode = 1
-                versionName = "0.1"
-                setMinSdkVersion(27)
-                setTargetSdkVersion(27)
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
             }
             splits {
-                abi {
-                    isEnable = true
-                    reset()
-                    include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
-                    isUniversalApk = true
+                it.abi {
+                    it.isEnable = true
+                    it.reset()
+                    it.include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+                    it.isUniversalApk = true
                 }
             }
         }
@@ -235,17 +235,17 @@ class IntegrationTest {
         project.configure<AppExtension> {
             compileSdkVersion(27)
             defaultConfig {
-                versionCode = 1
-                versionName = "0.1"
-                setMinSdkVersion(27)
-                setTargetSdkVersion(27)
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
             }
             splits {
-                abi {
-                    isEnable = true
-                    reset()
-                    include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
-                    isUniversalApk = true
+                it.abi {
+                    it.isEnable = true
+                    it.reset()
+                    it.include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+                    it.isUniversalApk = true
                 }
             }
         }
@@ -275,10 +275,10 @@ class IntegrationTest {
         project.configure<AppExtension> {
             compileSdkVersion(27)
             defaultConfig {
-                versionCode = 1
-                versionName = "0.1"
-                setMinSdkVersion(27)
-                setTargetSdkVersion(27)
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
             }
         }
         project.configure<FirebaseTestLabPluginExtension> {
