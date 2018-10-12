@@ -46,7 +46,12 @@ internal class FirebaseTestLabProcessCreator(
                 --locales ${device.locales.joinArgs()},
                 --os-version-ids ${device.androidApiLevels.joinArgs()}
                 --orientations ${device.screenOrientations.map { orientation -> orientation.gcloudName }.joinArgs()}
-                --device-ids ${device.deviceIds.joinArgs()}
+                ${if(device.isUseOrchestrator) "--use-orchestrator" else ""}
+                ${if (device.environmentVariables.isNotEmpty()) "--environment-variables ${device.environmentVariables.joinToString(",")}" else ""}
+                ${if (device.testTargets.isNotEmpty()) "--test-targets ${device.testTargets.joinToString(",", transform = { "\"$it\"" })}" else ""}
+                ${device.customParamsForGCloudTool}
+                ${device.testRunnerClass?.let { "--test-runner-class \"$it\"" } ?: ""}
+                --device-ids ${device .deviceIds.joinArgs()}
                 --app $apk
                 ${if (device.timeout > 0) "--timeoutSec ${device.timeout}s" else ""}
     """.asCommand())
