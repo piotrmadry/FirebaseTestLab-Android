@@ -132,7 +132,7 @@ firebaseTestLab {
             // Environment variables are mirrored as extra options to the am instrument -e KEY1 VALUE1
             // environmentVariables = ["clearPackageData=true", "coverage=true"]
 
-            // The fully-qualified Java class name of the instrumentation test runner
+            // The fully-qualified class name of the instrumentation test runner
             // testRunnerClass = "com.my.package.MyRunner"
 
             // Pass any custom param for gcloud
