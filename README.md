@@ -122,6 +122,21 @@ firebaseTestLab {
 
             // You can set timeout (in seconds) for test
             // timeout = 6000
+
+            // Enable Android Test Orchestrator more info at: https://developer.android.com/training/testing/junit-runner
+            // isUseOrchestrator = true // default false
+
+            // A list of one or more test target filters to apply (default: run all test targets)
+            // testTargets = ["size large"]
+
+            // Environment variables are mirrored as extra options to the am instrument -e KEY1 VALUE1
+            // environmentVariables = ["clearPackageData=true", "coverage=true"]
+
+            // The fully-qualified Java class name of the instrumentation test runner
+            // testRunnerClass = "com.my.package.MyRunner"
+
+            // Pass any custom param for gcloud
+            // customParamsForGCloudTool = --no-performance-metrics
         }
         // You can define more devices
         someOtherDevices {
