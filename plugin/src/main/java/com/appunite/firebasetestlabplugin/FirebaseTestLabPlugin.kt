@@ -174,7 +174,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 CloudTestResultDownloader(
                         sdk,
                         resultsTypes,
-                        File(cloudDirectoryName),
+                        File(cloudDirectoryName ?: ""),
                         File(project.buildDir, cloudDirectoryName),
                         cloudBucketName!!,
                         project.logger
@@ -184,7 +184,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             }
 
             if (clearDirectoryBeforeRun && downloader == null) {
-                throw IllegalStateException("If you want to clear directory before run you need to setup cloudBucketName")
+                throw IllegalStateException("If you want to clear directory before run you need to setup cloudBucketName and cloudDirectoryName")
             }
 
             val firebaseTestLabProcessCreator = FirebaseTestLabProcessCreator(
