@@ -13,7 +13,7 @@ class Device(val name: String) {
     var abiSplits: Set<String> = setOf()
     var isUseOrchestrator = false
     var environmentVariables: List<String> = listOf()
-    var customParamsForGCloudTool: String = ""
+    var customParamsForGCloudTool: List<String> = listOf()
     var testTargets: List<String> = listOf()
     var testRunnerClass: String? = null
 }

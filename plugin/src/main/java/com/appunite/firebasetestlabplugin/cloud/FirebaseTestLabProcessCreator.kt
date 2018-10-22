@@ -3,7 +3,6 @@ package com.appunite.firebasetestlabplugin.cloud
 import com.appunite.firebasetestlabplugin.FirebaseTestLabPlugin
 import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.TestResults
-import com.appunite.firebasetestlabplugin.utils.asCommand
 import com.appunite.firebasetestlabplugin.utils.joinArgs
 import org.gradle.api.logging.Logger
 import java.io.File
@@ -31,30 +30,31 @@ internal class FirebaseTestLabProcessCreator(
     )
 
     fun callFirebaseTestLab(device: Device, apk: File, testType: TestType): TestResults {
-        val type = when (testType) {
-            TestType.Robo -> "--type robo"
-            is TestType.Instrumentation -> "--type instrumentation --test ${testType.testApk}"
-        }
-
-        val processBuilder = ProcessBuilder("""
-        ${sdk.gcloud.absolutePath}
-                firebase test android run
-                --format json
-                ${if (gCloudBucketName != null) "--results-bucket $gCloudBucketName" else ""}
-                ${if (gCloudDirectory != null) "--results-dir $gCloudDirectory" else ""}
-                $type
-                --locales ${device.locales.joinArgs()},
-                --os-version-ids ${device.androidApiLevels.joinArgs()}
-                --orientations ${device.screenOrientations.map { orientation -> orientation.gcloudName }.joinArgs()}
-                ${if(device.isUseOrchestrator) "--use-orchestrator" else ""}
-                ${if (device.environmentVariables.isNotEmpty()) "--environment-variables ${device.environmentVariables.joinToString(",")}" else ""}
-                ${if (device.testTargets.isNotEmpty()) "--test-targets ${device.testTargets.joinToString(",", transform = { "\"$it\"" })}" else ""}
-                ${device.customParamsForGCloudTool}
-                ${device.testRunnerClass?.let { "--test-runner-class \"$it\"" } ?: ""}
-                --device-ids ${device .deviceIds.joinArgs()}
-                --app $apk
-                ${if (device.timeout > 0) "--timeoutSec ${device.timeout}s" else ""}
-    """.asCommand())
+        val processBuilder = ProcessBuilder(
+            sequenceOf(
+                sdk.gcloud.absolutePath,
+                "firebase", "test", "android", "run",
+                "--format=json",
+                "--device-ids=${device.deviceIds.joinArgs()}",
+                "--app=$apk",
+                "--locales=${device.locales.joinArgs()}",
+                "--os-version-ids=${device.androidApiLevels.joinArgs()}",
+                "--orientations=${device.screenOrientations.map { orientation -> orientation.gcloudName }.joinArgs()}")
+                .plus(when (testType) {
+                    TestType.Robo -> sequenceOf("--type=robo")
+                    is TestType.Instrumentation -> sequenceOf("--type=instrumentation", "--test=${testType.testApk}")
+                })
+                .plus(gCloudBucketName?.let { sequenceOf("--results-bucket=$it") } ?: sequenceOf())
+                .plus(gCloudDirectory?.let { sequenceOf("--results-dir=$it") } ?: sequenceOf())
+                .plus(if (device.isUseOrchestrator) sequenceOf("--use-orchestrator") else sequenceOf())
+                .plus(if (device.environmentVariables.isNotEmpty()) sequenceOf("--environment-variables=${device.environmentVariables.joinToString(",")}") else sequenceOf())
+                .plus(if (device.testTargets.isNotEmpty()) sequenceOf("--test-targets=${device.testTargets.joinToString(",")}") else sequenceOf())
+                .plus(device.customParamsForGCloudTool)
+                .plus(device.testRunnerClass?.let { sequenceOf("--test-runner-class=$it") } ?: sequenceOf())
+                .plus(if (device.timeout > 0) sequenceOf("--timeoutSec=${device.timeout}s") else sequenceOf())
+                .toList()
+        )
+        logger.debug(processBuilder.command().joinToString(separator = " ", transform = { "\"$it\"" }))
         val process = processBuilder.start()
         process.errorStream.bufferedReader().forEachLine { logger.lifecycle(it) }
         process.inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
