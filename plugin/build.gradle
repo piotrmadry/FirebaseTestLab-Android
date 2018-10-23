@@ -5,8 +5,7 @@ apply plugin: "maven"
 apply plugin: "com.gradle.plugin-publish"
 
 group = "firebase.test.lab"
-version = "1.1.5"
-
+version = "1.1.6"
 
 gradlePlugin {
     plugins {

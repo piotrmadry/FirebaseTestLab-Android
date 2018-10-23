@@ -9,16 +9,12 @@ import java.io.File
 
 open class FirebaseTestLabPluginExtension(private val project: Project) {
 
-    companion object {
-        private val DEFAULT_DIRECTORY_NAME = "androidTestResults"
-    }
-
     var keyFile: File? = null
     var googleProjectId: String? = null
     var cloudSdkPath: String? = null
 
     var cloudBucketName: String? = null
-    var cloudDirectoryName: String = DEFAULT_DIRECTORY_NAME
+    var cloudDirectoryName: String? = null
 
     var clearDirectoryBeforeRun = false
     var ignoreFailures: Boolean = false

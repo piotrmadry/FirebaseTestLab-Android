@@ -86,6 +86,7 @@ firebaseTestLab {
 
     // If you prefer you can use your custom google storage bucket for storing build sources and results
     // cloudBucketName = "your-custome-google-storage-bucket-name"
+    // If not specified default is: a timestamp with a random suffix
     // cloudDirectoryName = "your-custome-directory-name"
 
     // If you prefer to install gcloud tool manually you can set path by
