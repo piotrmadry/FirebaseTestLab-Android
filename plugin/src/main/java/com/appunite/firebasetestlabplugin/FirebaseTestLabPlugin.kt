@@ -170,11 +170,11 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             }
 
 
-            val downloader: CloudTestResultDownloader? = if (cloudBucketName != null) {
+            val downloader: CloudTestResultDownloader? = if (cloudBucketName != null && cloudDirectoryName != null) {
                 CloudTestResultDownloader(
                         sdk,
                         resultsTypes,
-                        File(cloudDirectoryName ?: ""),
+                        File(cloudDirectoryName),
                         File(project.buildDir, cloudDirectoryName),
                         cloudBucketName!!,
                         project.logger
