@@ -38,7 +38,7 @@ Firebase is actually the most popular developer tool platform, wchich handles al
            }
        }
        dependencies {
-           classpath "gradle.plugin.firebase.test.lab:plugin:1.1.2"
+           classpath "gradle.plugin.firebase.test.lab:plugin:x.x.x"
        }
    }
    ```
