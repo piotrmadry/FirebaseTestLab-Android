@@ -17,13 +17,14 @@ class IntegrationTest {
         val simpleProject = File(javaClass.getResource("simple").file)
         val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
         project.plugins.apply("com.android.application")
+    
         project.configure<AppExtension> {
             compileSdkVersion(27)
-            defaultConfig {
-                it.versionCode = 1
-                it.versionName = "0.1"
-                it.setMinSdkVersion(27)
-                it.setTargetSdkVersion(27)
+            defaultConfig.apply {
+                versionCode = 1
+                versionName = "0.1"
+                setMinSdkVersion(27)
+                setTargetSdkVersion(27)
             }
         }
         (project as ProjectInternal).evaluate()
@@ -37,12 +38,6 @@ class IntegrationTest {
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
             compileSdkVersion(27)
-            defaultConfig {
-                it.versionCode = 1
-                it.versionName = "0.1"
-                it.setMinSdkVersion(27)
-                it.setTargetSdkVersion(27)
-            }
         }
         (project as ProjectInternal).evaluate()
 
@@ -60,7 +55,7 @@ class IntegrationTest {
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
             compileSdkVersion(27)
-            defaultConfig {
+            defaultConfig.also {
                 it.versionCode = 1
                 it.versionName = "0.1"
                 it.setMinSdkVersion(27)
@@ -85,7 +80,7 @@ class IntegrationTest {
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
             compileSdkVersion(27)
-            defaultConfig {
+            defaultConfig.also {
                 it.versionCode = 1
                 it.versionName = "0.1"
                 it.setMinSdkVersion(27)
@@ -95,9 +90,9 @@ class IntegrationTest {
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
-            createDevice("myDevice", {
+            createDevice("myDevice") {
                 deviceIds = listOf("Nexus6")
-            })
+            }
         }
         (project as ProjectInternal).evaluate()
 
@@ -114,14 +109,14 @@ class IntegrationTest {
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
             compileSdkVersion(27)
-            defaultConfig {
+            defaultConfig.also {
                 it.versionCode = 1
                 it.versionName = "0.1"
                 it.setMinSdkVersion(27)
                 it.setTargetSdkVersion(27)
             }
-            splits {
-                it.abi {
+            splits.also {
+                it.abi.also {
                     it.isEnable = true
                     it.reset()
                     it.include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
@@ -132,9 +127,9 @@ class IntegrationTest {
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
-            createDevice("myDevice", {
+            createDevice("myDevice") {
                 deviceIds = listOf("Nexus6")
-            })
+            }
         }
         (project as ProjectInternal).evaluate()
 
@@ -153,14 +148,14 @@ class IntegrationTest {
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
             compileSdkVersion(27)
-            defaultConfig {
+            defaultConfig.also {
                 it.versionCode = 1
                 it.versionName = "0.1"
                 it.setMinSdkVersion(27)
                 it.setTargetSdkVersion(27)
             }
-            splits {
-                it.abi {
+            splits.also {
+                it.abi.also {
                     it.isEnable = true
                     it.reset()
                     it.include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
@@ -171,9 +166,9 @@ class IntegrationTest {
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
-            createDevice("myDevice", {
+            createDevice("myDevice") {
                 deviceIds = listOf("Nexus6")
-            })
+            }
         }
         (project as ProjectInternal).evaluate()
 
@@ -192,14 +187,14 @@ class IntegrationTest {
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
             compileSdkVersion(27)
-            defaultConfig {
+            defaultConfig.also {
                 it.versionCode = 1
                 it.versionName = "0.1"
                 it.setMinSdkVersion(27)
                 it.setTargetSdkVersion(27)
             }
-            splits {
-                it.abi {
+            splits.also {
+                it.abi.also {
                     it.isEnable = true
                     it.reset()
                     it.include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
@@ -210,12 +205,12 @@ class IntegrationTest {
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
-            createDevice("myDevice", {
+            createDevice("myDevice") {
                 deviceIds = listOf("Nexus6")
                 filterAbiSplits = true
                 abiSplits = setOf("armeabi-v7a")
                 testUniversalApk = false
-            })
+            }
         }
         (project as ProjectInternal).evaluate()
 
@@ -234,14 +229,14 @@ class IntegrationTest {
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
             compileSdkVersion(27)
-            defaultConfig {
+            defaultConfig.also {
                 it.versionCode = 1
                 it.versionName = "0.1"
                 it.setMinSdkVersion(27)
                 it.setTargetSdkVersion(27)
             }
-            splits {
-                it.abi {
+            splits.also {
+                it.abi.also {
                     it.isEnable = true
                     it.reset()
                     it.include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
@@ -252,10 +247,10 @@ class IntegrationTest {
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
-            createDevice("myDevice", {
+            createDevice("myDevice") {
                 deviceIds = listOf("Nexus6")
                 filterAbiSplits = true
-            })
+            }
         }
         (project as ProjectInternal).evaluate()
 
@@ -274,7 +269,7 @@ class IntegrationTest {
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
             compileSdkVersion(27)
-            defaultConfig {
+            defaultConfig.also {
                 it.versionCode = 1
                 it.versionName = "0.1"
                 it.setMinSdkVersion(27)
@@ -284,9 +279,9 @@ class IntegrationTest {
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
-            createDevice("myDevice", {
+            createDevice("myDevice") {
                 deviceIds = listOf("Nexus6")
-            })
+            }
         }
         (project as ProjectInternal).evaluate()
 
