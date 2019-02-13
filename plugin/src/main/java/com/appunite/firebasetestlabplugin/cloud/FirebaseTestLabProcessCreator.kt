@@ -29,8 +29,22 @@ internal class FirebaseTestLabProcessCreator(
             20 to "A test infrastructure error occurred."
     )
 
-    fun callFirebaseTestLab(device: Device, apk: File, testType: TestType): TestResults {
-        val processBuilder = ProcessBuilder(
+    fun callFirebaseTestLab(device: Device, apk: File, testType: TestType, shardIndex: Int = -1): TestResults {
+        val processBuilder = createProcess(device, apk, testType)
+        logger.debug(processBuilder.command().joinToString(separator = " ", transform = { "\"$it\"" }))
+        val process = processBuilder.start()
+        process.errorStream.bufferedReader().forEachLine { logger.lifecycle(it) }
+        process.inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
+
+        val resultCode = process.waitFor()
+        return TestResults(
+                isSuccessful = resultCode == 0,
+                message = resultMessageMap[resultCode] ?: ""
+        )
+    }
+    
+    private fun createProcess(device: Device, apk: File, testType: TestType, shardIndex: Int = -1): ProcessBuilder {
+        return ProcessBuilder(
             sequenceOf(
                 sdk.gcloud.absolutePath,
                 "firebase", "test", "android", "run",
@@ -47,22 +61,17 @@ internal class FirebaseTestLabProcessCreator(
                 .plus(gCloudBucketName?.let { sequenceOf("--results-bucket=$it") } ?: sequenceOf())
                 .plus(gCloudDirectory?.let { sequenceOf("--results-dir=$it") } ?: sequenceOf())
                 .plus(if (device.isUseOrchestrator) sequenceOf("--use-orchestrator") else sequenceOf())
-                .plus(if (device.environmentVariables.isNotEmpty()) sequenceOf("--environment-variables=${device.environmentVariables.joinToString(",")}") else sequenceOf())
+                .plus(if (device.environmentVariables.isNotEmpty()) sequenceOf("--environment-variables=${device.environmentVariables.joinToString(",")}${addSharding(device, shardIndex)}") else sequenceOf())
                 .plus(if (device.testTargets.isNotEmpty()) sequenceOf("--test-targets=${device.testTargets.joinToString(",")}") else sequenceOf())
                 .plus(device.customParamsForGCloudTool)
                 .plus(device.testRunnerClass?.let { sequenceOf("--test-runner-class=$it") } ?: sequenceOf())
                 .plus(if (device.timeout > 0) sequenceOf("--timeoutSec=${device.timeout}s") else sequenceOf())
                 .toList()
         )
-        logger.debug(processBuilder.command().joinToString(separator = " ", transform = { "\"$it\"" }))
-        val process = processBuilder.start()
-        process.errorStream.bufferedReader().forEachLine { logger.lifecycle(it) }
-        process.inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
-
-        val resultCode = process.waitFor()
-        return TestResults(
-                isSuccessful = resultCode == 0,
-                message = resultMessageMap[resultCode] ?: ""
-        )
+    }
+    
+    private fun addSharding(device: Device, shardIndex: Int): String = when {
+        device.numShards <= 0 && shardIndex >= 0 -> ", numShards=${device.numShards}, shardIndex=$shardIndex"
+        else -> ""
     }
 }

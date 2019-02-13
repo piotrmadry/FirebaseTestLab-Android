@@ -270,7 +270,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                     })
                 }
 
-        val instrumentationTasks = combineAll(appVersions, variant.outputs, {deviceAndMap, testApk -> Test(deviceAndMap.device, deviceAndMap.apk, testApk)})
+        val instrumentationTasks: List<Task> = combineAll(appVersions, variant.outputs, {deviceAndMap, testApk -> Test(deviceAndMap.device, deviceAndMap.apk, testApk)})
                 .map {
                     test ->
                     val devicePart = test.device.name.capitalize()
@@ -293,7 +293,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                     })
                 }
 
-        val allInstrumentation = project.task(runTestsTaskInstrumentation, closureOf<Task> {
+        val allInstrumentation: Task = project.task(runTestsTaskInstrumentation, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB
             description = "Run all Instrumentation tests for $variantName in Firebase Test Lab"
             dependsOn(instrumentationTasks)
@@ -314,7 +314,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             }
         })
 
-        val allRobo = project.task(runTestsTaskRobo, closureOf<Task> {
+        val allRobo: Task = project.task(runTestsTaskRobo, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB
             description = "Run all Robo tests for $variantName in Firebase Test Lab"
             dependsOn(roboTasks)
@@ -334,6 +334,56 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 if (roboTasks.isEmpty()) throw IllegalStateException("Nothing match your filter")
             }
         })
+    
+        combineAll(appVersions, variant.outputs) { deviceAndMap, testApk -> Test(deviceAndMap.device, deviceAndMap.apk, testApk) }
+            .map { test ->
+                val devicePart = test.device.name.capitalize()
+                val apkPart = dashToCamelCase(test.apk.name).capitalize()
+                val testApkPart = test.testApk.let { if (it.filters.isEmpty()) "" else dashToCamelCase(it.name).capitalize() }
+                val numShards = test.device.numShards
+                if (numShards > 1) {
+                    
+                    val shardedTasks: List<Task> = (0 until test.device.numShards).map { shardIndex ->
+                        val taskName = "$runTestsTaskInstrumentation$devicePart$apkPart$testApkPart" + "NumShards$numShards" + "ShardIndex$shardIndex"
+                        project.task(taskName, closureOf<Task> {
+                            inputs.files(test.testApk.outputFile, test.apk.outputFile)
+                            group = Constants.FIREBASE_TEST_LAB
+                            description = "Run Instrumentation test for ${test.device.name} device on $variantName/${test.apk.name} with ShardNumber $numShards and ShardIndex $shardIndex in Firebase Test Lab"
+                            if (downloader != null) {
+                                mustRunAfter(cleanTask)
+                            }
+                            dependsOn(taskSetup)
+                            dependsOn(arrayOf(test.apk.assemble, test.testApk.assemble))
+                            doLast {
+                                val result = firebaseTestLabProcessCreator.callFirebaseTestLab(test.device, test.apk.outputFile, TestType.Instrumentation(test.testApk.outputFile), shardIndex)
+                                processResult(result, ignoreFailures)
+                            }
+                        })
+                    }
+    
+                    val runTestsTaskSharded = "firebaseTestLabExecuteAllShardForConfiguration$devicePart$apkPart$testApkPart"
+                    project.task(runTestsTaskSharded, closureOf<Task> {
+                        group = Constants.FIREBASE_TEST_LAB
+                        description = "Run all tests for $variantName sharded in Firebase Test Lab"
+                        dependsOn(shardedTasks)
+        
+                        doFirst {
+                            if (devices.isEmpty()) throw IllegalStateException("You need to set et least one device in:\n" +
+                                "firebaseTestLab {" +
+                                "  devices {\n" +
+                                "    nexus6 {\n" +
+                                "      androidApiLevels = [21]\n" +
+                                "      deviceIds = [\"Nexus6\"]\n" +
+                                "      locales = [\"en\"]\n" +
+                                "    }\n" +
+                                "  } " +
+                                "}")
+            
+                            if (roboTasks.isEmpty()) throw IllegalStateException("Nothing match your filter")
+                        }
+                    })
+                }
+            }
 
         project.task(runTestsTask, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB

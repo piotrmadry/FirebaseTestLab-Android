@@ -299,4 +299,76 @@ class IntegrationTest {
         println("Executing task: ${task.name}")
         task.actions.forEach { it.execute(task) }
     }
+    
+    @Test
+    fun `ensure that tasks are sharded for single device when numShards is filled`() {
+        val simpleProject = File(javaClass.getResource("simple").file)
+        val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
+        project.plugins.apply("com.android.application")
+        project.plugins.apply("firebase.test.lab")
+        project.configure<AppExtension> {
+            compileSdkVersion(27)
+            defaultConfig.also {
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
+            }
+        }
+        project.configure<FirebaseTestLabPluginExtension> {
+            googleProjectId = "test"
+            keyFile = File(simpleProject, "key.json")
+            createDevice("myDevice") {
+                deviceIds = listOf("Nexus6")
+                numShards = 2
+            }
+        }
+        (project as ProjectInternal).evaluate()
+        
+        
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebugNumShards2ShardIndex0", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebugNumShards2ShardIndex1", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteAllShardForConfigurationMyDeviceDebug", false).isNotEmpty())
+    }
+    
+    @Test
+    fun `ensure that tasks are sharded for two devices when numShards is filled`() {
+        val simpleProject = File(javaClass.getResource("simple").file)
+        val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
+        project.plugins.apply("com.android.application")
+        project.plugins.apply("firebase.test.lab")
+        project.configure<AppExtension> {
+            compileSdkVersion(27)
+            defaultConfig.also {
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
+            }
+        }
+        project.configure<FirebaseTestLabPluginExtension> {
+            googleProjectId = "test"
+            keyFile = File(simpleProject, "key.json")
+            createDevice("myDevice") {
+                deviceIds = listOf("Nexus6")
+                numShards = 2
+            }
+    
+            createDevice("mySecondDevice") {
+                deviceIds = listOf("Nexus5")
+                numShards = 3
+            }
+        }
+        (project as ProjectInternal).evaluate()
+        
+        
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebugNumShards2ShardIndex0", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebugNumShards2ShardIndex1", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteAllShardForConfigurationMyDeviceDebug", false).isNotEmpty())
+    
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMySecondDeviceDebugNumShards3ShardIndex0", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMySecondDeviceDebugNumShards3ShardIndex1", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMySecondDeviceDebugNumShards3ShardIndex2", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteAllShardForConfigurationMySecondDeviceDebug", false).isNotEmpty())
+    }
 }

@@ -12,6 +12,8 @@ class Device(val name: String) {
     var filterAbiSplits = false
     var abiSplits: Set<String> = setOf()
     var isUseOrchestrator = false
+    var numShards = 0
+    
     var environmentVariables: List<String> = listOf()
     var customParamsForGCloudTool: List<String> = listOf()
     var testTargets: List<String> = listOf()
