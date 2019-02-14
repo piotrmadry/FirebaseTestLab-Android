@@ -1,6 +1,8 @@
 package com.appunite.firebasetestlabplugin.model
 
-class Device(val name: String) {
+import java.io.Serializable
+
+class Device(val name: String) : Serializable {
     var locales: List<String> = listOf("en")
     var screenOrientations: List<ScreenOrientation> = listOf(ScreenOrientation.PORTRAIT)
     var androidApiLevels: List<Int> = listOf()

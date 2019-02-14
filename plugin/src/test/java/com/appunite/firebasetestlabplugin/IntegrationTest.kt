@@ -301,7 +301,7 @@ class IntegrationTest {
     }
     
     @Test
-    fun `ensure that tasks are sharded for single device when numShards is filled`() {
+    fun `ensure after evaluation without shard number instrumented tasks are present`() {
         val simpleProject = File(javaClass.getResource("simple").file)
         val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
         project.plugins.apply("com.android.application")
@@ -320,19 +320,15 @@ class IntegrationTest {
             keyFile = File(simpleProject, "key.json")
             createDevice("myDevice") {
                 deviceIds = listOf("Nexus6")
-                numShards = 2
             }
         }
         (project as ProjectInternal).evaluate()
         
-        
-        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebugNumShards2ShardIndex0", false).isNotEmpty())
-        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebugNumShards2ShardIndex1", false).isNotEmpty())
-        assertTrue(project.getTasksByName("firebaseTestLabExecuteAllShardForConfigurationMyDeviceDebug", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebug", false).isNotEmpty())
     }
     
     @Test
-    fun `ensure that tasks are sharded for two devices when numShards is filled`() {
+    fun `ensure after evaluation with shard number instrumented tasks are present`() {
         val simpleProject = File(javaClass.getResource("simple").file)
         val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
         project.plugins.apply("com.android.application")
@@ -351,24 +347,11 @@ class IntegrationTest {
             keyFile = File(simpleProject, "key.json")
             createDevice("myDevice") {
                 deviceIds = listOf("Nexus6")
-                numShards = 2
-            }
-    
-            createDevice("mySecondDevice") {
-                deviceIds = listOf("Nexus5")
-                numShards = 3
+                numShards = 4
             }
         }
         (project as ProjectInternal).evaluate()
         
-        
-        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebugNumShards2ShardIndex0", false).isNotEmpty())
-        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebugNumShards2ShardIndex1", false).isNotEmpty())
-        assertTrue(project.getTasksByName("firebaseTestLabExecuteAllShardForConfigurationMyDeviceDebug", false).isNotEmpty())
-    
-        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMySecondDeviceDebugNumShards3ShardIndex0", false).isNotEmpty())
-        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMySecondDeviceDebugNumShards3ShardIndex1", false).isNotEmpty())
-        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMySecondDeviceDebugNumShards3ShardIndex2", false).isNotEmpty())
-        assertTrue(project.getTasksByName("firebaseTestLabExecuteAllShardForConfigurationMySecondDeviceDebug", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebug", false).isNotEmpty())
     }
 }

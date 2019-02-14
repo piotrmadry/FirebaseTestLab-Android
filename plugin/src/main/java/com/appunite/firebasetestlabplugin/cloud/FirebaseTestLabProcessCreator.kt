@@ -4,19 +4,25 @@ import com.appunite.firebasetestlabplugin.FirebaseTestLabPlugin
 import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.TestResults
 import com.appunite.firebasetestlabplugin.utils.joinArgs
-import org.gradle.api.logging.Logger
 import java.io.File
+import java.io.Serializable
 
-sealed class TestType {
+sealed class TestType : Serializable {
     object Robo : TestType()
     data class Instrumentation(val testApk: File) : TestType()
 }
 
-internal class FirebaseTestLabProcessCreator(
-        private val sdk: FirebaseTestLabPlugin.Sdk,
-        private val gCloudBucketName: String?,
-        private val gCloudDirectory: String?,
-        private val logger: Logger) {
+data class ProcessData(
+    val sdk: FirebaseTestLabPlugin.Sdk,
+    val gCloudBucketName: String?,
+    val gCloudDirectory: String?,
+    val device: Device,
+    val apk: File,
+    val testType: TestType,
+    val shardIndex: Int = -1
+) : Serializable
+
+object FirebaseTestLabProcessCreator {
 
     private val resultMessageMap = mapOf(
             0 to "All test executions passed.",
@@ -29,39 +35,39 @@ internal class FirebaseTestLabProcessCreator(
             20 to "A test infrastructure error occurred."
     )
 
-    fun callFirebaseTestLab(device: Device, apk: File, testType: TestType, shardIndex: Int = -1): TestResults {
-        val processBuilder = createProcess(device, apk, testType)
-        logger.debug(processBuilder.command().joinToString(separator = " ", transform = { "\"$it\"" }))
-        val process = processBuilder.start()
-        process.errorStream.bufferedReader().forEachLine { logger.lifecycle(it) }
-        process.inputStream.bufferedReader().forEachLine { logger.lifecycle(it) }
-
-        val resultCode = process.waitFor()
+    fun callFirebaseTestLab(processData: ProcessData): TestResults {
+        val process: Process = createProcess(processData).start()
+        val resultCode: Int = process.let {
+            it.errorStream.bufferedReader().forEachLine { errorInfo -> println(errorInfo) }
+            it.inputStream.bufferedReader().forEachLine { info -> println(info) }
+            process.waitFor()
+        }
         return TestResults(
-                isSuccessful = resultCode == 0,
-                message = resultMessageMap[resultCode] ?: ""
+            isSuccessful = resultCode == 0,
+            message = resultMessageMap.getOrElse(resultCode) { "Unknown error with code: $resultCode" }
         )
     }
     
-    private fun createProcess(device: Device, apk: File, testType: TestType, shardIndex: Int = -1): ProcessBuilder {
+    private fun createProcess(processData: ProcessData): ProcessBuilder {
+        val device: Device = processData.device
         return ProcessBuilder(
             sequenceOf(
-                sdk.gcloud.absolutePath,
+                processData.sdk.gcloud.absolutePath,
                 "firebase", "test", "android", "run",
                 "--format=json",
                 "--device-ids=${device.deviceIds.joinArgs()}",
-                "--app=$apk",
+                "--app=$processData.apk",
                 "--locales=${device.locales.joinArgs()}",
                 "--os-version-ids=${device.androidApiLevels.joinArgs()}",
                 "--orientations=${device.screenOrientations.map { orientation -> orientation.gcloudName }.joinArgs()}")
-                .plus(when (testType) {
+                .plus(when (processData.testType) {
                     TestType.Robo -> sequenceOf("--type=robo")
-                    is TestType.Instrumentation -> sequenceOf("--type=instrumentation", "--test=${testType.testApk}")
+                    is TestType.Instrumentation -> sequenceOf("--type=instrumentation", "--test=${processData.testType.testApk}")
                 })
-                .plus(gCloudBucketName?.let { sequenceOf("--results-bucket=$it") } ?: sequenceOf())
-                .plus(gCloudDirectory?.let { sequenceOf("--results-dir=$it") } ?: sequenceOf())
+                .plus(processData.gCloudBucketName?.let { sequenceOf("--results-bucket=$it") } ?: sequenceOf())
+                .plus(processData.gCloudDirectory?.let { sequenceOf("--results-dir=$it") } ?: sequenceOf())
                 .plus(if (device.isUseOrchestrator) sequenceOf("--use-orchestrator") else sequenceOf())
-                .plus(if (device.environmentVariables.isNotEmpty()) sequenceOf("--environment-variables=${device.environmentVariables.joinToString(",")}${addSharding(device, shardIndex)}") else sequenceOf())
+                .plus(setupEnvironmentVariables(device, processData.shardIndex))
                 .plus(if (device.testTargets.isNotEmpty()) sequenceOf("--test-targets=${device.testTargets.joinToString(",")}") else sequenceOf())
                 .plus(device.customParamsForGCloudTool)
                 .plus(device.testRunnerClass?.let { sequenceOf("--test-runner-class=$it") } ?: sequenceOf())
@@ -70,8 +76,13 @@ internal class FirebaseTestLabProcessCreator(
         )
     }
     
-    private fun addSharding(device: Device, shardIndex: Int): String = when {
-        device.numShards <= 0 && shardIndex >= 0 -> ", numShards=${device.numShards}, shardIndex=$shardIndex"
-        else -> ""
-    }
+    private fun setupEnvironmentVariables(device: Device, shardIndex: Int): Sequence<String> =
+        if (device.environmentVariables.isNotEmpty() || device.numShards > 0)
+            sequenceOf(StringBuilder()
+                .append("--environment-variables=")
+                .append(if (device.environmentVariables.isNotEmpty()) device.environmentVariables.joinToString(",") else "")
+                .append(if (device.environmentVariables.isNotEmpty() && device.numShards > 0) "," else "")
+                .append(if (device.numShards > 0) "numShards=${device.numShards},shardIndex=$shardIndex" else "")
+                .toString())
+        else sequenceOf()
 }
