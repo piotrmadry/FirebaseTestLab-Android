@@ -277,6 +277,8 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                     })
                 }
     
+        val testResultFile = File(project.buildDir, "TestResults.txt")
+        
         val instrumentationTasks: List<Task> = combineAll(appVersions, variant.outputs)
         { deviceAndMap, testApk -> Test(deviceAndMap.device, deviceAndMap.apk, testApk) }
             .map { test ->
@@ -285,8 +287,6 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 val testApkPart = test.testApk.let { if (it.filters.isEmpty()) "" else dashToCamelCase(it.name).capitalize() }
                 val taskName = "$runTestsTaskInstrumentation$devicePart$apkPart$testApkPart"
                 val numShards = test.device.numShards
-    
-                val file = File(project.buildDir, "TestResults.txt")
     
                 if (numShards > 0) {
                     project.tasks.create(taskName, InstrumentationShardingTask::class.java) {
@@ -300,17 +300,32 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                             apk = test.apk.outputFile,
                             testType = TestType.Instrumentation(test.testApk.outputFile)
                         )
-                        this.stateFile = file
+                        this.stateFile = testResultFile
             
                         if (downloader != null) {
                             mustRunAfter(cleanTask)
                         }
                         dependsOn(taskSetup)
                         dependsOn(arrayOf(test.apk.assemble, test.testApk.assemble))
+    
+                        doFirst {
+                            testResultFile.writeText("")
+                        }
             
                         doLast {
-                            val resultCode = file.readText().toInt()
-                            processResult(resultCode, ignoreFailures)
+                            val testResults = testResultFile.readText()
+                            val resultCode: Int? = testResults.toIntOrNull()
+    
+                            logger.lifecycle("TESTS RESULTS: Every digit represents single shard.")
+                            logger.lifecycle("\"0\" means -> tests for particular shard passed.")
+                            logger.lifecycle("\"1\" means -> tests for particular shard failed.")
+    
+                            logger.lifecycle("RESULTS_CODE: $resultCode")
+                            logger.lifecycle("When result code is equal to 0 means that all tests for all shards passed, otherwise some of them failed.")
+    
+                            if (resultCode != null) {
+                                processResult(resultCode, ignoreFailures)
+                            }
                         }
                     }
         
@@ -419,6 +434,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             project.logger.lifecycle("SUCCESS: All tests passed.")
         } else {
             if (ignoreFailures) {
+                println("FAILURE: Tests failed.")
                 project.logger.error("FAILURE: Tests failed.")
             } else {
                 throw GradleException("FAILURE: Tests failed.")
