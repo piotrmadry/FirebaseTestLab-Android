@@ -18,6 +18,7 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
 import org.gradle.kotlin.dsl.closureOf
 import org.gradle.kotlin.dsl.register
+import groovy.lang.Closure
 import java.io.ByteArrayOutputStream
 import java.io.File
 
@@ -45,6 +46,8 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
         private const val taskAuth = "firebaseTestLabAuth"
         private const val taskSetup = "firebaseTestLabSetup"
         private const val taskSetProject = "firebaseTestLabSetProject"
+        private const val taskPrefixDownload = "firebaseTestLabDownload"
+        private const val taskPrefixExecute = "firebaseTestLabExecute"
     }
 
     private lateinit var project: Project
@@ -218,10 +221,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
 
         val cleanTask = "firebaseTestLabClean${variantName.capitalize()}"
 
-        val runTestsTask = "firebaseTestLabExecute${variantName.capitalize()}"
+        val runTestsTask = taskPrefixExecute + variantName.capitalize()
         val runTestsTaskInstrumentation = "${runTestsTask}Instrumentation"
         val runTestsTaskRobo = "${runTestsTask}Robo"
-        val downloadTask = "firebaseTestLabDownload${variantName.capitalize()}"
 
         if (downloader != null) {
             project.task(cleanTask, closureOf<Task> {
@@ -293,7 +295,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                     })
                 }
 
-        val allInstrumentation = project.task(runTestsTaskInstrumentation, closureOf<Task> {
+        val allInstrumentation = addExecuteAndDownload(runTestsTaskInstrumentation, downloader, cleanTask, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB
             description = "Run all Instrumentation tests for $variantName in Firebase Test Lab"
             dependsOn(instrumentationTasks)
@@ -335,25 +337,12 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             }
         })
 
-        project.task(runTestsTask, closureOf<Task> {
+        addExecuteAndDownload(runTestsTask, downloader, cleanTask, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB
             description = "Run all tests for $variantName in Firebase Test Lab"
             dependsOn(allRobo, allInstrumentation)
         })
 
-        if (downloader != null) {
-            project.task(downloadTask, closureOf<Task> {
-                group = Constants.FIREBASE_TEST_LAB
-                description = "Run Android Tests in Firebase Test Lab and download artifacts from google storage"
-                dependsOn(taskSetup)
-                dependsOn(runTestsTask)
-                mustRunAfter(cleanTask)
-
-                doLast {
-                    downloader.getResults()
-                }
-            })
-        }
     }
 
     private fun processResult(result: TestResults, ignoreFailures: Boolean) {
@@ -366,6 +355,25 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 throw GradleException(result.message)
             }
         }
+    }
+
+    private fun addExecuteAndDownload(name: String, downloader: CloudTestResultDownloader?, cleanTask: String, taskClosure: Closure<Any?>): Task {
+        val runTask = project.task(name, taskClosure)
+        if (downloader != null) {
+            val configuration = name.substring(taskPrefixExecute.length)
+            project.task(taskPrefixDownload + configuration, closureOf<Task> {
+                group = Constants.FIREBASE_TEST_LAB
+                description = "Run Android Tests for $configuration in Firebase Test Lab and download artifacts from google storage"
+                dependsOn(taskSetup)
+                dependsOn(name)
+                mustRunAfter(cleanTask)
+
+                doLast {
+                    downloader.getResults()
+                }
+            })
+        }
+        return runTask
     }
 }
 
