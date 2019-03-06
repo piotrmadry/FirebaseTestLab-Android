@@ -51,7 +51,7 @@ internal class FirebaseTestLabProcessCreator(
                 .plus(if (device.testTargets.isNotEmpty()) sequenceOf("--test-targets=${device.testTargets.joinToString(",")}") else sequenceOf())
                 .plus(device.customParamsForGCloudTool)
                 .plus(device.testRunnerClass?.let { sequenceOf("--test-runner-class=$it") } ?: sequenceOf())
-                .plus(if (device.timeout > 0) sequenceOf("--timeoutSec=${device.timeout}s") else sequenceOf())
+                .plus(if (device.timeout > 0) sequenceOf("--timeout=${device.timeout}s") else sequenceOf())
                 .toList()
         )
         logger.debug(processBuilder.command().joinToString(separator = " ", transform = { "\"$it\"" }))
