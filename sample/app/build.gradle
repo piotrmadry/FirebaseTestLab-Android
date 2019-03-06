@@ -26,9 +26,8 @@ android {
 // Setup firebase test lab plugin
 firebaseTestLab {
     // REQUIRED obtain service key as described inside README
-    keyFile = file("test-lab-key.json")
-    // REQUIRED setup google project id ad described inside README
-    googleProjectId = "your-project-app-id"
+    keyFile = file("developer-account.json.enc")
+    googleProjectId = "mgm-resorts-app"
 
     // If you want you can ignore test failures
     // ignoreFailures = true

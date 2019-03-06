@@ -1,28 +1,30 @@
 # Firebase Test Lab Plugin for Android
-[![Kotlin version badge](https://img.shields.io/badge/kotlin-1.1.60-blue.svg)](http://kotlinlang.org/)
+[![Kotlin version badge](https://img.shields.io/badge/kotlin-2.0.0-blue.svg)](http://kotlinlang.org/)
 [![License](https://img.shields.io/crates/l/rustc-serialize.svg)](https://github.com/piotrmadry/FirebaseTestLab-Android/blob/master/LICENSE)
 
-![firebase](https://i.ytimg.com/vi/4_ZEEX1x17k/maxresdefault.jpg)
-
 ## Introduction
-Firebase is actually the most popular developer tool platform, wchich handles almost every aspect of the app. It also gives possibility to run Android Tests on physical or virtual devices hosted in a Google data center through [Firebase Test Lab](https://firebase.google.com/docs/test-lab/). In order to fully exploit the potential of this tool I've created plugin to simplify process of creating tests configurations. It allows to run tests locally as well as on you CI server.
+Plugin for which integrates Firebase Test Lab with Android Project. Simplify running Android Tests on Firebase platform locally as well as on using Continuous integration. 
 
 ### Contributors
 - [Jacek Marchwicki](https://github.com/jacek-marchwicki)
 
 #### Available features
+
 - Automatic installation of `gcloud` command line tool
 - Creating tasks for testable `buildType`[By default it is `debug`. If you want to change it use `testBuildType "buildTypeName"`]
-- Creating tasks for every defined device and configuration separetly [ including Instrumented / Robo tests ]
+- Creating tasks for every defined device and configuration separately [ including Instrumented / Robo tests ]
 - Creating tasks which runs all configurations at once
 - Ability to download tests results to specific location
 - Ability to clear directory inside bucket before test run
+- Instrumented tests sharding
 
 #### Benefits
+
 - Readability
 - Simplicity
 - Remote and Local Testing
 - Compatible with Gradle 3.0 
+- Instrumented Tests sharding for parallel test execution
 
 #### Setup 
 
@@ -120,6 +122,9 @@ firebaseTestLab {
 
             // If you are using ABI splits you can remove testing universal APK
             // testUniversalApk = false
+            
+            // For instrumented test you can specify number of shards, which allows to split all the tests for [numShards] times and execute them in parallel
+            // numShards = 4
 
             // You can set timeout (in seconds) for test
             // timeout = 6000

@@ -263,4 +263,59 @@ class IntegrationTest {
         println("Executing task: ${task.name}")
         task.actions.forEach { it.execute(task) }
     }
+    
+    @Test
+    fun `ensure after evaluation without shard number instrumented tasks are present`() {
+        val simpleProject = File(javaClass.getResource("simple").file)
+        val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
+        project.plugins.apply("com.android.application")
+        project.plugins.apply("firebase.test.lab")
+        project.configure<AppExtension> {
+            compileSdkVersion(27)
+            defaultConfig.also {
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
+            }
+        }
+        project.configure<FirebaseTestLabPluginExtension> {
+            googleProjectId = "test"
+            keyFile = File(simpleProject, "key.json")
+            createDevice("myDevice") {
+                deviceIds = listOf("Nexus6")
+            }
+        }
+        (project as ProjectInternal).evaluate()
+        
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebug", false).isNotEmpty())
+    }
+    
+    @Test
+    fun `ensure after evaluation with shard number instrumented tasks are present`() {
+        val simpleProject = File(javaClass.getResource("simple").file)
+        val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
+        project.plugins.apply("com.android.application")
+        project.plugins.apply("firebase.test.lab")
+        project.configure<AppExtension> {
+            compileSdkVersion(27)
+            defaultConfig.also {
+                it.versionCode = 1
+                it.versionName = "0.1"
+                it.setMinSdkVersion(27)
+                it.setTargetSdkVersion(27)
+            }
+        }
+        project.configure<FirebaseTestLabPluginExtension> {
+            googleProjectId = "test"
+            keyFile = File(simpleProject, "key.json")
+            createDevice("myDevice") {
+                deviceIds = listOf("Nexus6")
+                numShards = 4
+            }
+        }
+        (project as ProjectInternal).evaluate()
+        
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebug", false).isNotEmpty())
+    }
 }
