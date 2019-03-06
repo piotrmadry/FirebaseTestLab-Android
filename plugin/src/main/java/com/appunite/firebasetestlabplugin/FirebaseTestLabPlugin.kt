@@ -6,9 +6,11 @@ import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.appunite.firebasetestlabplugin.cloud.CloudTestResultDownloader
 import com.appunite.firebasetestlabplugin.cloud.FirebaseTestLabProcessCreator
+import com.appunite.firebasetestlabplugin.cloud.ProcessData
 import com.appunite.firebasetestlabplugin.cloud.TestType
 import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.TestResults
+import com.appunite.firebasetestlabplugin.tasks.InstrumentationShardingTask
 import com.appunite.firebasetestlabplugin.utils.Constants
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.GradleException
@@ -20,8 +22,9 @@ import org.gradle.kotlin.dsl.closureOf
 import org.gradle.kotlin.dsl.register
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.Serializable
 
-internal class FirebaseTestLabPlugin : Plugin<Project> {
+class FirebaseTestLabPlugin : Plugin<Project> {
 
     open class HiddenExec : Exec() {
         init {
@@ -66,7 +69,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
         }
     }
 
-    data class Sdk(val gcloud: File, val gsutil: File)
+    data class Sdk(val gcloud: File, val gsutil: File): Serializable
 
     private fun createDownloadSdkTask(project: Project, cloudSdkPath: String?): Sdk =
             if (cloudSdkPath != null) {
@@ -187,16 +190,9 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                 throw IllegalStateException("If you want to clear directory before run you need to setup cloudBucketName and cloudDirectoryName")
             }
 
-            val firebaseTestLabProcessCreator = FirebaseTestLabProcessCreator(
-                    sdk,
-                    cloudBucketName,
-                    cloudDirectoryName,
-                    project.logger
-            )
-
             (project.extensions.findByName(ANDROID) as AppExtension).apply {
                 testVariants.toList().forEach { testVariant ->
-                    createGroupedTestLabTask(devices, testVariant, firebaseTestLabProcessCreator, ignoreFailures, downloader)
+                    createGroupedTestLabTask(devices, testVariant, ignoreFailures, downloader, sdk, cloudBucketName, cloudDirectoryName)
                 }
             }
 
@@ -206,14 +202,17 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
 
     data class DeviceAppMap(val device: Device, val apk: BaseVariantOutput)
 
-    data class Test(val device: Device, val apk: BaseVariantOutput, val testApk: BaseVariantOutput)
-
+    data class Test(val device: Device, val apk: BaseVariantOutput, val testApk: BaseVariantOutput): Serializable
+    
     private fun createGroupedTestLabTask(
-            devices: List<Device>,
-            variant: TestVariant,
-            firebaseTestLabProcessCreator: FirebaseTestLabProcessCreator,
-            ignoreFailures: Boolean,
-            downloader: CloudTestResultDownloader?) {
+        devices: List<Device>,
+        variant: TestVariant,
+        ignoreFailures: Boolean,
+        downloader: CloudTestResultDownloader?,
+        sdk: Sdk,
+        cloudBucketName: String?,
+        cloudDirectoryName: String?
+    ) {
         val variantName = variant.testedVariant?.name?.capitalize() ?: ""
 
         val cleanTask = "firebaseTestLabClean${variantName.capitalize()}"
@@ -264,19 +263,73 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                         dependsOn(taskSetup)
                         dependsOn(arrayOf(test.apk.assemble))
                         doLast {
-                            val result = firebaseTestLabProcessCreator.callFirebaseTestLab(test.device, test.apk.outputFile, TestType.Robo)
+                            val result = FirebaseTestLabProcessCreator.callFirebaseTestLab(ProcessData(
+                                sdk = sdk,
+                                gCloudBucketName = cloudBucketName,
+                                gCloudDirectory = cloudDirectoryName,
+                                device = test.device,
+                                apk = test.apk.outputFile,
+                                
+                                testType = TestType.Robo
+                            ))
                             processResult(result, ignoreFailures)
                         }
                     })
                 }
-
-        val instrumentationTasks = combineAll(appVersions, variant.outputs, {deviceAndMap, testApk -> Test(deviceAndMap.device, deviceAndMap.apk, testApk)})
-                .map {
-                    test ->
-                    val devicePart = test.device.name.capitalize()
-                    val apkPart = dashToCamelCase(test.apk.name).capitalize()
-                    val testApkPart = test.testApk.let { if (it.filters.isEmpty()) "" else dashToCamelCase(it.name).capitalize() }
-                    val taskName = "$runTestsTaskInstrumentation$devicePart$apkPart$testApkPart"
+    
+        val testResultFile = File(project.buildDir, "TestResults.txt")
+        
+        val instrumentationTasks: List<Task> = combineAll(appVersions, variant.outputs)
+        { deviceAndMap, testApk -> Test(deviceAndMap.device, deviceAndMap.apk, testApk) }
+            .map { test ->
+                val devicePart = test.device.name.capitalize()
+                val apkPart = dashToCamelCase(test.apk.name).capitalize()
+                val testApkPart = test.testApk.let { if (it.filters.isEmpty()) "" else dashToCamelCase(it.name).capitalize() }
+                val taskName = "$runTestsTaskInstrumentation$devicePart$apkPart$testApkPart"
+                val numShards = test.device.numShards
+    
+                if (numShards > 0) {
+                    project.tasks.create(taskName, InstrumentationShardingTask::class.java) {
+                        group = Constants.FIREBASE_TEST_LAB
+                        description = "Run Instrumentation test for ${test.device.name} device on $variantName/${test.apk.name} in Firebase Test Lab"
+                        this.processData = ProcessData(
+                            sdk = sdk,
+                            gCloudBucketName = cloudBucketName,
+                            gCloudDirectory = cloudDirectoryName,
+                            device = test.device,
+                            apk = test.apk.outputFile,
+                            testType = TestType.Instrumentation(test.testApk.outputFile)
+                        )
+                        this.stateFile = testResultFile
+            
+                        if (downloader != null) {
+                            mustRunAfter(cleanTask)
+                        }
+                        dependsOn(taskSetup)
+                        dependsOn(arrayOf(test.apk.assemble, test.testApk.assemble))
+    
+                        doFirst {
+                            testResultFile.writeText("")
+                        }
+            
+                        doLast {
+                            val testResults = testResultFile.readText()
+                            val resultCode: Int? = testResults.toIntOrNull()
+    
+                            logger.lifecycle("TESTS RESULTS: Every digit represents single shard.")
+                            logger.lifecycle("\"0\" means -> tests for particular shard passed.")
+                            logger.lifecycle("\"1\" means -> tests for particular shard failed.")
+    
+                            logger.lifecycle("RESULTS_CODE: $resultCode")
+                            logger.lifecycle("When result code is equal to 0 means that all tests for all shards passed, otherwise some of them failed.")
+    
+                            if (resultCode != null) {
+                                processResult(resultCode, ignoreFailures)
+                            }
+                        }
+                    }
+        
+                } else {
                     project.task(taskName, closureOf<Task> {
                         inputs.files(test.testApk.outputFile, test.apk.outputFile)
                         group = Constants.FIREBASE_TEST_LAB
@@ -287,13 +340,21 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
                         dependsOn(taskSetup)
                         dependsOn(arrayOf(test.apk.assemble, test.testApk.assemble))
                         doLast {
-                            val result = firebaseTestLabProcessCreator.callFirebaseTestLab(test.device, test.apk.outputFile, TestType.Instrumentation(test.testApk.outputFile))
+                            val result = FirebaseTestLabProcessCreator.callFirebaseTestLab(ProcessData(
+                                sdk = sdk,
+                                gCloudBucketName = cloudBucketName,
+                                gCloudDirectory = cloudDirectoryName,
+                                device = test.device,
+                                apk = test.apk.outputFile,
+                                testType = TestType.Instrumentation(test.testApk.outputFile)
+                            ))
                             processResult(result, ignoreFailures)
                         }
                     })
                 }
+            }
 
-        val allInstrumentation = project.task(runTestsTaskInstrumentation, closureOf<Task> {
+        val allInstrumentation: Task = project.task(runTestsTaskInstrumentation, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB
             description = "Run all Instrumentation tests for $variantName in Firebase Test Lab"
             dependsOn(instrumentationTasks)
@@ -314,7 +375,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             }
         })
 
-        val allRobo = project.task(runTestsTaskRobo, closureOf<Task> {
+        val allRobo: Task = project.task(runTestsTaskRobo, closureOf<Task> {
             group = Constants.FIREBASE_TEST_LAB
             description = "Run all Robo tests for $variantName in Firebase Test Lab"
             dependsOn(roboTasks)
@@ -340,7 +401,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             description = "Run all tests for $variantName in Firebase Test Lab"
             dependsOn(allRobo, allInstrumentation)
         })
-
+    
         if (downloader != null) {
             project.task(downloadTask, closureOf<Task> {
                 group = Constants.FIREBASE_TEST_LAB
@@ -355,7 +416,7 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             })
         }
     }
-
+    
     private fun processResult(result: TestResults, ignoreFailures: Boolean) {
         if (result.isSuccessful) {
             project.logger.lifecycle(result.message)
@@ -367,11 +428,22 @@ internal class FirebaseTestLabPlugin : Plugin<Project> {
             }
         }
     }
+    
+    private fun processResult(resultCode: Int, ignoreFailures: Boolean) =
+        if (resultCode == 0) {
+            project.logger.lifecycle("SUCCESS: All tests passed.")
+        } else {
+            if (ignoreFailures) {
+                println("FAILURE: Tests failed.")
+                project.logger.error("FAILURE: Tests failed.")
+            } else {
+                throw GradleException("FAILURE: Tests failed.")
+            }
+        }
 }
-
 
 private fun <T1, T2, R> combineAll(l1: Collection<T1>, l2: Collection<T2>, func: (T1, T2) -> R): List<R> =
         l1.flatMap { t1 -> l2.map { t2 -> func(t1, t2)} }
 
-private fun dashToCamelCase(dash: String): String =
+fun dashToCamelCase(dash: String): String =
         dash.split('-', '_').joinToString("") { it.capitalize() }
