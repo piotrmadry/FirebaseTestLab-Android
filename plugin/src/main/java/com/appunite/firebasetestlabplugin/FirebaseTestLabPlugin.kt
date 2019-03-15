@@ -20,6 +20,7 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
 import org.gradle.kotlin.dsl.closureOf
 import org.gradle.kotlin.dsl.register
+import groovy.lang.Closure
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.Serializable
@@ -48,6 +49,8 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         private const val taskAuth = "firebaseTestLabAuth"
         private const val taskSetup = "firebaseTestLabSetup"
         private const val taskSetProject = "firebaseTestLabSetProject"
+        private const val taskPrefixDownload = "firebaseTestLabDownload"
+        private const val taskPrefixExecute = "firebaseTestLabExecute"
     }
 
     private lateinit var project: Project
@@ -217,10 +220,10 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
         val cleanTask = "firebaseTestLabClean${variantName.capitalize()}"
 
-        val runTestsTask = "firebaseTestLabExecute${variantName.capitalize()}"
+        val variantSuffix = variantName.capitalize()
+        val runTestsTask = taskPrefixExecute + variantSuffix
         val runTestsTaskInstrumentation = "${runTestsTask}Instrumentation"
         val runTestsTaskRobo = "${runTestsTask}Robo"
-        val downloadTask = "firebaseTestLabDownload${variantName.capitalize()}"
 
         if (downloader != null) {
             project.task(cleanTask, closureOf<Task> {
@@ -403,17 +406,19 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         })
     
         if (downloader != null) {
-            project.task(downloadTask, closureOf<Task> {
-                group = Constants.FIREBASE_TEST_LAB
-                description = "Run Android Tests in Firebase Test Lab and download artifacts from google storage"
-                dependsOn(taskSetup)
-                dependsOn(runTestsTask)
-                mustRunAfter(cleanTask)
+            listOf(variantSuffix, "${variantSuffix}Instrumentation").map{suffix ->
+               project.task(taskPrefixDownload + suffix, closureOf<Task> {
+                    group = Constants.FIREBASE_TEST_LAB
+                    description = "Run Android Tests in Firebase Test Lab and download artifacts from google storage"
+                    dependsOn(taskSetup)
+                    dependsOn(taskPrefixExecute + suffix)
+                    mustRunAfter(cleanTask)
 
-                doLast {
-                    downloader.getResults()
-                }
-            })
+                    doLast {
+                        downloader.getResults()
+                    }
+                })
+            }
         }
     }
     

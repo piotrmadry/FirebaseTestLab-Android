@@ -12,12 +12,11 @@ import java.io.File
 
 class IntegrationTest {
 
-    @Test
-    fun `test evaluate simple project success`() {
+    fun prepareSimpleProject(): Project {
         val simpleProject = File(javaClass.getResource("simple").file)
         val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
         project.plugins.apply("com.android.application")
-    
+
         project.configure<AppExtension> {
             compileSdkVersion(27)
             defaultConfig.apply {
@@ -27,6 +26,13 @@ class IntegrationTest {
                 setTargetSdkVersion(27)
             }
         }
+        return project
+    }
+
+
+    @Test
+    fun `test evaluate simple project success`() {
+        val project = prepareSimpleProject()
         (project as ProjectInternal).evaluate()
     }
 
@@ -50,18 +56,8 @@ class IntegrationTest {
     @Test
     fun `run firebaseTestLabSetup install gcloud`() {
         val simpleProject = File(javaClass.getResource("simple").file)
-        val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
-        project.plugins.apply("com.android.application")
-        project.plugins.apply("firebase.test.lab")
-        project.configure<AppExtension> {
-            compileSdkVersion(27)
-            defaultConfig.also {
-                it.versionCode = 1
-                it.versionName = "0.1"
-                it.setMinSdkVersion(27)
-                it.setTargetSdkVersion(27)
-            }
-        }
+        val project = prepareSimpleProject()
+	project.plugins.apply("firebase.test.lab")
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
@@ -75,18 +71,8 @@ class IntegrationTest {
     @Test
     fun `ensure after evaluation tasks presented`() {
         val simpleProject = File(javaClass.getResource("simple").file)
-        val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
-        project.plugins.apply("com.android.application")
-        project.plugins.apply("firebase.test.lab")
-        project.configure<AppExtension> {
-            compileSdkVersion(27)
-            defaultConfig.also {
-                it.versionCode = 1
-                it.versionName = "0.1"
-                it.setMinSdkVersion(27)
-                it.setTargetSdkVersion(27)
-            }
-        }
+        val project = prepareSimpleProject()
+	project.plugins.apply("firebase.test.lab")
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
@@ -96,25 +82,36 @@ class IntegrationTest {
         }
         (project as ProjectInternal).evaluate()
 
-
         assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentation", false).isNotEmpty())
         assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugRobo", false).isNotEmpty())
     }
 
     @Test
+    fun `ensure after evaluation download tasks presented`() {
+        val simpleProject = File(javaClass.getResource("simple").file)
+        val project = prepareSimpleProject()
+        project.plugins.apply("firebase.test.lab")
+        project.configure<FirebaseTestLabPluginExtension> {
+            googleProjectId = "test"
+            cloudBucketName = "test-bucket"
+            cloudDirectoryName = "test-directory"
+            keyFile = File(simpleProject, "key.json")
+            createDevice("myDevice") {
+                deviceIds = listOf("Nexus6")
+            }
+        }
+        (project as ProjectInternal).evaluate()
+
+        assertTrue(project.getTasksByName("firebaseTestLabDownloadDebugInstrumentation", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabDownloadDebug", false).isNotEmpty())
+    }
+
+    @Test
     fun `ensure tasks are created for abi splits with universal apk`() {
         val simpleProject = File(javaClass.getResource("simple").file)
-        val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
-        project.plugins.apply("com.android.application")
+        val project = prepareSimpleProject()
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
-            compileSdkVersion(27)
-            defaultConfig.also {
-                it.versionCode = 1
-                it.versionName = "0.1"
-                it.setMinSdkVersion(27)
-                it.setTargetSdkVersion(27)
-            }
             splits.also {
                 it.abi.also {
                     it.isEnable = true
@@ -143,17 +140,9 @@ class IntegrationTest {
     @Test
     fun `ensure tasks are created for abi splits without unversal apk`() {
         val simpleProject = File(javaClass.getResource("simple").file)
-        val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
-        project.plugins.apply("com.android.application")
+        val project = prepareSimpleProject()
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
-            compileSdkVersion(27)
-            defaultConfig.also {
-                it.versionCode = 1
-                it.versionName = "0.1"
-                it.setMinSdkVersion(27)
-                it.setTargetSdkVersion(27)
-            }
             splits.also {
                 it.abi.also {
                     it.isEnable = true
@@ -182,17 +171,9 @@ class IntegrationTest {
     @Test
     fun `ensure tasks are created for abi splits with filter`() {
         val simpleProject = File(javaClass.getResource("simple").file)
-        val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
-        project.plugins.apply("com.android.application")
+        val project = prepareSimpleProject()
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
-            compileSdkVersion(27)
-            defaultConfig.also {
-                it.versionCode = 1
-                it.versionName = "0.1"
-                it.setMinSdkVersion(27)
-                it.setTargetSdkVersion(27)
-            }
             splits.also {
                 it.abi.also {
                     it.isEnable = true
@@ -224,17 +205,9 @@ class IntegrationTest {
     @Test
     fun `ensure tasks are created for abi splits with filter all`() {
         val simpleProject = File(javaClass.getResource("simple").file)
-        val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
-        project.plugins.apply("com.android.application")
+        val project = prepareSimpleProject()
         project.plugins.apply("firebase.test.lab")
         project.configure<AppExtension> {
-            compileSdkVersion(27)
-            defaultConfig.also {
-                it.versionCode = 1
-                it.versionName = "0.1"
-                it.setMinSdkVersion(27)
-                it.setTargetSdkVersion(27)
-            }
             splits.also {
                 it.abi.also {
                     it.isEnable = true
@@ -264,18 +237,9 @@ class IntegrationTest {
     @Test
     fun `ensure tasks are created when abi split is disabled`() {
         val simpleProject = File(javaClass.getResource("simple").file)
-        val project = ProjectBuilder.builder().withProjectDir(simpleProject).build()
-        project.plugins.apply("com.android.application")
+        val project = prepareSimpleProject()
         project.plugins.apply("firebase.test.lab")
-        project.configure<AppExtension> {
-            compileSdkVersion(27)
-            defaultConfig.also {
-                it.versionCode = 1
-                it.versionName = "0.1"
-                it.setMinSdkVersion(27)
-                it.setTargetSdkVersion(27)
-            }
-        }
+
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
