@@ -1,5 +1,5 @@
 # Firebase Test Lab Plugin for Android
-[![Kotlin version badge](https://img.shields.io/badge/kotlin-2.1.0-blue.svg)](http://kotlinlang.org/)
+[![Plugin version badge](https://img.shields.io/static/v1.svg?label=plugin&message=2.1.0&color=blue)](https://plugins.gradle.org/plugin/firebase.test.lab)
 [![License](https://img.shields.io/crates/l/rustc-serialize.svg)](https://github.com/piotrmadry/FirebaseTestLab-Android/blob/master/LICENSE)
 
 ## Introduction
