@@ -2,6 +2,8 @@ package com.appunite.firebasetestlabplugin
 
 import com.android.build.VariantOutput
 import com.android.build.gradle.AppExtension
+import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.TestedExtension
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.appunite.firebasetestlabplugin.cloud.CloudTestResultDownloader
@@ -20,7 +22,6 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.Exec
 import org.gradle.kotlin.dsl.closureOf
 import org.gradle.kotlin.dsl.register
-import groovy.lang.Closure
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.Serializable
@@ -193,7 +194,13 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 throw IllegalStateException("If you want to clear directory before run you need to setup cloudBucketName and cloudDirectoryName")
             }
 
-            (project.extensions.findByName(ANDROID) as AppExtension).apply {
+            val androidExtension: Any? = project.extensions.findByName(ANDROID)
+
+            if(androidExtension !is AppExtension || androidExtension !is LibraryExtension){
+                throw IllegalStateException("Only application and library modules are supported")
+            }
+
+            (androidExtension as TestedExtension).apply {
                 testVariants.toList().forEach { testVariant ->
                     createGroupedTestLabTask(devices, testVariant, ignoreFailures, downloader, sdk, cloudBucketName, cloudDirectoryName)
                 }
