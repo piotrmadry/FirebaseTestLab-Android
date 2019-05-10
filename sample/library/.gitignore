@@ -1,0 +1,13 @@
+#IntelliJ IDEA
+/.idea/**
+*.iml
+
+# Gradle
+/.gradle/**
+/.android/**
+/local.properties
+gradle.properties
+/build
+/captures
+/projectFilesBackup
+

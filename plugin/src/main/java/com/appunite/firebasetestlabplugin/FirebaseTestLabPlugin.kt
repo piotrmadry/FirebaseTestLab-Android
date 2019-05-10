@@ -196,7 +196,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
             val androidExtension: Any? = project.extensions.findByName(ANDROID)
 
-            if(androidExtension !is AppExtension || androidExtension !is LibraryExtension){
+            if (androidExtension !is AppExtension && androidExtension !is LibraryExtension) {
                 throw IllegalStateException("Only application and library modules are supported")
             }
 
