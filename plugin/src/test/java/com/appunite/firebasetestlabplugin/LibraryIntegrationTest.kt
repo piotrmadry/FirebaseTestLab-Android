@@ -28,6 +28,9 @@ class LibraryIntegrationTest {
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
+            createDevice("myDevice") {
+                deviceIds = listOf("Nexus6")
+            }
         }
 
         return project
