@@ -24,9 +24,14 @@ import org.gradle.kotlin.dsl.closureOf
 import org.gradle.kotlin.dsl.register
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileOutputStream
 import java.io.Serializable
 import java.net.URL
 import java.nio.file.Paths
+import java.io.IOException
+import java.io.BufferedInputStream
+
+
 
 class FirebaseTestLabPlugin : Plugin<Project> {
 
@@ -54,6 +59,9 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         private const val taskSetProject = "firebaseTestLabSetProject"
         private const val taskPrefixDownload = "firebaseTestLabDownload"
         private const val taskPrefixExecute = "firebaseTestLabExecute"
+        private const val BLANK_APK_RESOURCE_PATH = "/blank.apk"
+
+        private val BLANK_APK_RESOURCE = FirebaseTestLabPlugin::class.java.getResource(BLANK_APK_RESOURCE_PATH)
     }
 
     private lateinit var project: Project
@@ -66,8 +74,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
      * so this is this missing APK required by Test Lab, even if it's not related to library module Firebase will
      * accept it and instrumentation tests will ignore it.
      */
-    private val blankApk: File = javaClass.getResource("/blank.apk")?.toFile()
-        ?: throw IllegalStateException("Unable to access blank.apk file")
+    private lateinit var blankApk: File
 
     /**
      * Create extension used to configure testing properties, platforms..
@@ -80,6 +87,25 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 GRADLE_METHOD_NAME,
                 FirebaseTestLabPluginExtension::class.java,
                 project)
+
+        blankApk = File(project.buildDir, "blank.apk")
+
+        if(!blankApk.exists()) {
+            // Need to copy/extract file
+            try {
+                BufferedInputStream(BLANK_APK_RESOURCE.openStream()).use { inputStream ->
+                    FileOutputStream(blankApk).use { fileOutputStream ->
+                        val data = ByteArray(1024)
+                        var byteContent: Int? = null
+                        while({byteContent = inputStream.read(data,0,1024); byteContent}() != null){
+                            fileOutputStream.write(data, 0, byteContent!!)
+                        }
+                    }
+                }
+            } catch (e: IOException) {
+                throw IllegalStateException("Unable to extract Blank APK file", e)
+            }
+        }
 
         project.afterEvaluate {
             setup()
