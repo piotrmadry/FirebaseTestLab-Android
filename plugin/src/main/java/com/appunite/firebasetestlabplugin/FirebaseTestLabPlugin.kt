@@ -25,6 +25,8 @@ import org.gradle.kotlin.dsl.register
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.Serializable
+import java.net.URL
+import java.nio.file.Paths
 
 class FirebaseTestLabPlugin : Plugin<Project> {
 
@@ -55,6 +57,17 @@ class FirebaseTestLabPlugin : Plugin<Project> {
     }
 
     private lateinit var project: Project
+
+    /**
+     * This file is used for library testing, normally, for apps, two APK files are provided, one with app and second
+     * with tests. In case of library modules we have AAR (library archive) and APK with tests but Test Lab is not
+     * accepting AAR as valid input (only APK). In fact library module APK file contains library module code and
+     * testing code so single APK is sufficient to do all required tests but Firebase is still requiring APK to test,
+     * so this is this missing APK required by Test Lab, even if it's not related to library module Firebase will
+     * accept it and instrumentation tests will ignore it.
+     */
+    private val blankApk: File = javaClass.getResource("/blank.apk")?.toFile()
+        ?: throw IllegalStateException("Unable to access blank.apk file")
 
     /**
      * Create extension used to configure testing properties, platforms..
@@ -200,9 +213,11 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 throw IllegalStateException("Only application and library modules are supported")
             }
 
+            val library = androidExtension is LibraryExtension
+
             (androidExtension as TestedExtension).apply {
                 testVariants.toList().forEach { testVariant ->
-                    createGroupedTestLabTask(devices, testVariant, ignoreFailures, downloader, sdk, cloudBucketName, cloudDirectoryName)
+                    createGroupedTestLabTask(devices, testVariant, ignoreFailures, downloader, sdk, cloudBucketName, cloudDirectoryName, library)
                 }
             }
 
@@ -213,7 +228,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
     data class DeviceAppMap(val device: Device, val apk: BaseVariantOutput)
 
     data class Test(val device: Device, val apk: BaseVariantOutput, val testApk: BaseVariantOutput): Serializable
-    
+
     private fun createGroupedTestLabTask(
         devices: List<Device>,
         variant: TestVariant,
@@ -221,7 +236,8 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         downloader: CloudTestResultDownloader?,
         sdk: Sdk,
         cloudBucketName: String?,
-        cloudDirectoryName: String?
+        cloudDirectoryName: String?,
+        library: Boolean
     ) {
         val variantName = variant.testedVariant?.name?.capitalize() ?: ""
 
@@ -257,9 +273,10 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                         it.device.testUniversalApk
                     }
                 }
-        val roboTasks = appVersions
-                .map {
-                    test ->
+
+        val roboTasks = if(!library) {
+            appVersions
+                .map { test ->
                     val devicePart = test.device.name.capitalize()
                     val apkPart = dashToCamelCase(test.apk.name).capitalize()
                     val taskName = "$runTestsTaskRobo$devicePart$apkPart"
@@ -279,16 +296,20 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                                 gCloudDirectory = cloudDirectoryName,
                                 device = test.device,
                                 apk = test.apk.outputFile,
-                                
+
                                 testType = TestType.Robo
                             ))
                             processResult(result, ignoreFailures)
                         }
                     })
                 }
-    
+        } else {
+            // No roboto for library modules
+            emptyList()
+        }
+
         val testResultFile = File(project.buildDir, "TestResults.txt")
-        
+
         val instrumentationTasks: List<Task> = combineAll(appVersions, variant.outputs)
         { deviceAndMap, testApk -> Test(deviceAndMap.device, deviceAndMap.apk, testApk) }
             .map { test ->
@@ -297,7 +318,9 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 val testApkPart = test.testApk.let { if (it.filters.isEmpty()) "" else dashToCamelCase(it.name).capitalize() }
                 val taskName = "$runTestsTaskInstrumentation$devicePart$apkPart$testApkPart"
                 val numShards = test.device.numShards
-    
+
+                val apkUnderTest = if(!library) test.apk.outputFile else blankApk
+
                 if (numShards > 0) {
                     project.tasks.create(taskName, InstrumentationShardingTask::class.java) {
                         group = Constants.FIREBASE_TEST_LAB
@@ -307,41 +330,41 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                             gCloudBucketName = cloudBucketName,
                             gCloudDirectory = cloudDirectoryName,
                             device = test.device,
-                            apk = test.apk.outputFile,
+                            apk = apkUnderTest,
                             testType = TestType.Instrumentation(test.testApk.outputFile)
                         )
                         this.stateFile = testResultFile
-            
+
                         if (downloader != null) {
                             mustRunAfter(cleanTask)
                         }
                         dependsOn(taskSetup)
                         dependsOn(arrayOf(test.apk.assemble, test.testApk.assemble))
-    
+
                         doFirst {
                             testResultFile.writeText("")
                         }
-            
+
                         doLast {
                             val testResults = testResultFile.readText()
                             val resultCode: Int? = testResults.toIntOrNull()
-    
+
                             logger.lifecycle("TESTS RESULTS: Every digit represents single shard.")
                             logger.lifecycle("\"0\" means -> tests for particular shard passed.")
                             logger.lifecycle("\"1\" means -> tests for particular shard failed.")
-    
+
                             logger.lifecycle("RESULTS_CODE: $resultCode")
                             logger.lifecycle("When result code is equal to 0 means that all tests for all shards passed, otherwise some of them failed.")
-    
+
                             if (resultCode != null) {
                                 processResult(resultCode, ignoreFailures)
                             }
                         }
                     }
-        
+
                 } else {
                     project.task(taskName, closureOf<Task> {
-                        inputs.files(test.testApk.outputFile, test.apk.outputFile)
+                        inputs.files(test.testApk.outputFile, apkUnderTest)
                         group = Constants.FIREBASE_TEST_LAB
                         description = "Run Instrumentation test for ${test.device.name} device on $variantName/${test.apk.name} in Firebase Test Lab"
                         if (downloader != null) {
@@ -355,7 +378,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                                 gCloudBucketName = cloudBucketName,
                                 gCloudDirectory = cloudDirectoryName,
                                 device = test.device,
-                                apk = test.apk.outputFile,
+                                apk = apkUnderTest,
                                 testType = TestType.Instrumentation(test.testApk.outputFile)
                             ))
                             processResult(result, ignoreFailures)
@@ -411,7 +434,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             description = "Run all tests for $variantName in Firebase Test Lab"
             dependsOn(allRobo, allInstrumentation)
         })
-    
+
         if (downloader != null) {
             listOf(variantSuffix, "${variantSuffix}Instrumentation").map{suffix ->
                project.task(taskPrefixDownload + suffix, closureOf<Task> {
@@ -428,7 +451,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             }
         }
     }
-    
+
     private fun processResult(result: TestResults, ignoreFailures: Boolean) {
         if (result.isSuccessful) {
             project.logger.lifecycle(result.message)
@@ -440,7 +463,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             }
         }
     }
-    
+
     private fun processResult(resultCode: Int, ignoreFailures: Boolean) =
         if (resultCode == 0) {
             project.logger.lifecycle("SUCCESS: All tests passed.")
@@ -459,3 +482,5 @@ private fun <T1, T2, R> combineAll(l1: Collection<T1>, l2: Collection<T2>, func:
 
 fun dashToCamelCase(dash: String): String =
         dash.split('-', '_').joinToString("") { it.capitalize() }
+
+private fun URL.toFile(): File = Paths.get(this.toURI()).toFile()
