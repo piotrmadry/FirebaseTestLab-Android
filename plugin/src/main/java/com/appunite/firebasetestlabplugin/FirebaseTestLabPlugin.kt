@@ -483,4 +483,8 @@ private fun <T1, T2, R> combineAll(l1: Collection<T1>, l2: Collection<T2>, func:
 fun dashToCamelCase(dash: String): String =
         dash.split('-', '_').joinToString("") { it.capitalize() }
 
-private fun URL.toFile(): File = Paths.get(this.toURI()).toFile()
+private fun URL.toFile(): File = try {
+    Paths.get(this.toURI()).toFile()
+} catch (e:Exception){
+    throw IllegalStateException("Unable to convert to file: $this")
+}

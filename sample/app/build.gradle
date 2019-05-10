@@ -3,10 +3,11 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 // apply firebase test lab plugin (after `apply plugin: 'com.android.application'` )
-apply plugin: 'firebase.test.lab'
 
 android {
+
     compileSdkVersion 26
+
     defaultConfig {
         applicationId "com.appunite.firebaselab_plugin"
         minSdkVersion 20
@@ -22,6 +23,8 @@ android {
         }
     }
 }
+
+apply plugin: 'firebase.test.lab'
 
 // Setup firebase test lab plugin
 firebaseTestLab {
