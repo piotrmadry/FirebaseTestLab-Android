@@ -10,7 +10,7 @@ import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Test
 import java.io.File
 
-class IntegrationTest {
+class ApplicationIntegrationTest {
 
     fun prepareSimpleProject(): Project {
         val simpleProject = File(javaClass.getResource("simple").file)
@@ -28,7 +28,6 @@ class IntegrationTest {
         }
         return project
     }
-
 
     @Test
     fun `test evaluate simple project success`() {
