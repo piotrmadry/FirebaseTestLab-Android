@@ -19,6 +19,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.Exec
 import org.gradle.kotlin.dsl.closureOf
 import org.gradle.kotlin.dsl.register
@@ -30,7 +31,6 @@ import java.net.URL
 import java.nio.file.Paths
 import java.io.IOException
 import java.io.BufferedInputStream
-
 
 
 class FirebaseTestLabPlugin : Plugin<Project> {
@@ -101,7 +101,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 BufferedInputStream(BLANK_APK_RESOURCE.openStream()).use { inputStream ->
                     FileOutputStream(blankApk).use { fileOutputStream ->
                         val data = ByteArray(1024)
-                        var byteContent: Int = 0
+                        var byteContent = 0
                         while({byteContent = inputStream.read(data,0,1024); byteContent}() != -1){
                             fileOutputStream.write(data, 0, byteContent)
                         }
@@ -181,7 +181,6 @@ class FirebaseTestLabPlugin : Plugin<Project> {
     private fun setup() {
         project.extensions.findByType(FirebaseTestLabPluginExtension::class.java)?.apply {
             val devices = devices.toList()
-
 
             val sdk = createDownloadSdkTask(project, cloudSdkPath)
 
@@ -404,6 +403,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                         dependsOn(taskSetup)
                         dependsOn(arrayOf(test.apk.assemble, test.testApk.assemble))
                         doLast {
+                            logger.log(LogLevel.INFO, "Run instrumentation tests for ${this.name}")
                             val result = FirebaseTestLabProcessCreator.callFirebaseTestLab(ProcessData(
                                 sdk = sdk,
                                 gCloudBucketName = cloudBucketName,
