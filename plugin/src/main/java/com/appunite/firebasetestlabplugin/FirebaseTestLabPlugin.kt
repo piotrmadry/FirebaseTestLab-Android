@@ -88,17 +88,22 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 FirebaseTestLabPluginExtension::class.java,
                 project)
 
+        if(!project.buildDir.exists()){
+            if(!project.buildDir.mkdirs()){
+                throw IllegalStateException("Unable to create build dir ${project.buildDir}")
+            }
+        }
+
         blankApk = File(project.buildDir, "blank.apk")
 
         if(!blankApk.exists()) {
-            // Need to copy/extract file
             try {
                 BufferedInputStream(BLANK_APK_RESOURCE.openStream()).use { inputStream ->
                     FileOutputStream(blankApk).use { fileOutputStream ->
                         val data = ByteArray(1024)
-                        var byteContent: Int? = null
-                        while({byteContent = inputStream.read(data,0,1024); byteContent}() != null){
-                            fileOutputStream.write(data, 0, byteContent!!)
+                        var byteContent: Int = 0
+                        while({byteContent = inputStream.read(data,0,1024); byteContent}() != -1){
+                            fileOutputStream.write(data, 0, byteContent)
                         }
                     }
                 }
