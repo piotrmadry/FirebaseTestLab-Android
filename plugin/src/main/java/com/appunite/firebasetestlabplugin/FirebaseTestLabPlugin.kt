@@ -350,19 +350,20 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 val numShards = test.device.numShards
 
                 val apkUnderTest = if(!library) test.apk.outputFile else blankApk
+                val processData = ProcessData(
+                    sdk = sdk,
+                    gCloudBucketName = cloudBucketName,
+                    gCloudDirectory = cloudDirectoryName,
+                    device = test.device,
+                    apk = apkUnderTest,
+                    testType = TestType.Instrumentation(test.testApk.outputFile)
+                )
 
                 if (numShards > 0) {
                     project.tasks.create(taskName, InstrumentationShardingTask::class.java) {
                         group = Constants.FIREBASE_TEST_LAB
                         description = "Run Instrumentation test for ${test.device.name} device on $variantName/${test.apk.name} in Firebase Test Lab"
-                        this.processData = ProcessData(
-                            sdk = sdk,
-                            gCloudBucketName = cloudBucketName,
-                            gCloudDirectory = cloudDirectoryName,
-                            device = test.device,
-                            apk = apkUnderTest,
-                            testType = TestType.Instrumentation(test.testApk.outputFile)
-                        )
+                        this.processData = processData
                         this.stateFile = testResultFile
 
                         if (downloader != null) {
@@ -404,14 +405,9 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                         dependsOn(arrayOf(test.apk.assemble, test.testApk.assemble))
                         doLast {
                             logger.log(LogLevel.INFO, "Run instrumentation tests for ${this.name}")
-                            val result = FirebaseTestLabProcessCreator.callFirebaseTestLab(ProcessData(
-                                sdk = sdk,
-                                gCloudBucketName = cloudBucketName,
-                                gCloudDirectory = cloudDirectoryName,
-                                device = test.device,
-                                apk = apkUnderTest,
-                                testType = TestType.Instrumentation(test.testApk.outputFile)
-                            ))
+                            logger.log(LogLevel.DEBUG, "ProcessData for test: $processData")
+                            val result = FirebaseTestLabProcessCreator.callFirebaseTestLab(processData)
+                            logger.log(LogLevel.INFO, "Result of ${this.name}: $result")
                             processResult(result, ignoreFailures)
                         }
                     })
