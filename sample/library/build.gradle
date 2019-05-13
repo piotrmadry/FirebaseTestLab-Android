@@ -1,4 +1,4 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
@@ -8,7 +8,6 @@ apply plugin: 'firebase.test.lab'
 android {
     compileSdkVersion 26
     defaultConfig {
-        applicationId "com.appunite.firebaselab_plugin"
         minSdkVersion 20
         targetSdkVersion 26
         versionCode 1
@@ -25,10 +24,7 @@ android {
 
 // Setup firebase test lab plugin
 firebaseTestLab {
-    
-    keyFile = file("developer-account.json.enc")
-    googleProjectId = "mgm-resorts-app"
-    
+
     devices {
         nexusEmulator {
             deviceIds = ["hammerhead"]
