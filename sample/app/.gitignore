@@ -1,6 +1,7 @@
 #IntelliJ IDEA
 /.idea/**
 *.iml
+key.json
 
 # Gradle
 /.gradle/**

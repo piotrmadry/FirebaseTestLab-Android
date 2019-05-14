@@ -3,6 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 // apply firebase test lab plugin (after `apply plugin: 'com.android.application'` )
+apply plugin: 'firebase.test.lab'
 
 android {
 
@@ -24,13 +25,11 @@ android {
     }
 }
 
-apply plugin: 'firebase.test.lab'
-
 // Setup firebase test lab plugin
 firebaseTestLab {
     // REQUIRED obtain service key as described inside README
-    keyFile = file("developer-account.json.enc")
-    googleProjectId = "mgm-resorts-app"
+    keyFile = file("key.json")
+    googleProjectId = "project-name"
 
     // If you want you can ignore test failures
     // ignoreFailures = true

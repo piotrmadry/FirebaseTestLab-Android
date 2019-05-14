@@ -25,6 +25,9 @@ android {
 // Setup firebase test lab plugin
 firebaseTestLab {
 
+    keyFile = file("key.json")
+    googleProjectId = "project-name"
+
     devices {
         nexusEmulator {
             deviceIds = ["hammerhead"]
