@@ -23,14 +23,12 @@ import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.Exec
 import org.gradle.kotlin.dsl.closureOf
 import org.gradle.kotlin.dsl.register
+import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.io.Serializable
-import java.net.URL
-import java.nio.file.Paths
 import java.io.IOException
-import java.io.BufferedInputStream
+import java.io.Serializable
 
 
 class FirebaseTestLabPlugin : Plugin<Project> {
@@ -378,18 +376,17 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
                         doLast {
                             val testResults = testResultFile.readText()
-                            val resultCode: Int? = testResults.toIntOrNull()
 
                             logger.lifecycle("TESTS RESULTS: Every digit represents single shard.")
                             logger.lifecycle("\"0\" means -> tests for particular shard passed.")
                             logger.lifecycle("\"1\" means -> tests for particular shard failed.")
 
-                            logger.lifecycle("RESULTS_CODE: $resultCode")
+                            logger.lifecycle("RESULTS_CODE: $testResults")
                             logger.lifecycle("When result code is equal to 0 means that all tests for all shards passed, otherwise some of them failed.")
-
-                            if (resultCode != null) {
-                                processResult(resultCode, ignoreFailures)
-                            }
+    
+    
+                            processResult(testResults, ignoreFailures)
+                            
                         }
                     }
 
@@ -491,8 +488,8 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         }
     }
 
-    private fun processResult(resultCode: Int, ignoreFailures: Boolean) =
-        if (resultCode == 0) {
+    private fun processResult(results: String, ignoreFailures: Boolean) =
+        if (!results.contains("1")) {
             project.logger.lifecycle("SUCCESS: All tests passed.")
         } else {
             if (ignoreFailures) {
@@ -509,9 +506,3 @@ private fun <T1, T2, R> combineAll(l1: Collection<T1>, l2: Collection<T2>, func:
 
 fun dashToCamelCase(dash: String): String =
         dash.split('-', '_').joinToString("") { it.capitalize() }
-
-private fun URL.toFile(): File = try {
-    Paths.get(this.toURI()).toFile()
-} catch (e:Exception){
-    throw IllegalStateException("Unable to convert to file: $this")
-}
