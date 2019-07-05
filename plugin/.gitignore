@@ -19,3 +19,6 @@ gradle.properties
 
 # General
 .DS_Store
+
+# Binaries
+/out/**
