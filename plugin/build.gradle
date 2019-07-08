@@ -48,6 +48,6 @@ configurations.all {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    implementation "com.android.tools.build:gradle:3.2.0"
+    implementation "com.android.tools.build:gradle:3.4.0"
     testCompile "junit:junit-dep:4.11"
 }
