@@ -1,12 +1,12 @@
 apply plugin: "java"
 apply plugin: "kotlin"
 apply plugin: "java-gradle-plugin"
-apply plugin: "maven"
+apply plugin: "maven-publish"
 apply plugin: "com.gradle.plugin-publish"
 apply plugin: "org.gradle.kotlin.kotlin-dsl"
 
 group = "firebase.test.lab"
-version = "2.2.0-SNAPSHOT"
+version = "2.3.0"
 
 gradlePlugin {
     plugins {
@@ -48,6 +48,6 @@ configurations.all {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    implementation "com.android.tools.build:gradle:3.2.0"
+    implementation "com.android.tools.build:gradle:3.4.0"
     testCompile "junit:junit-dep:4.11"
 }
