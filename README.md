@@ -40,7 +40,7 @@ Plugin for which integrates Firebase Test Lab with Android Project. Simplify run
            }
        }
        dependencies {
-           classpath "gradle.plugin.firebase.test.lab:plugin:x.x.x"
+           classpath "firebase.test.lab:plugin:X.X.X"
        }
    }
    ```
