@@ -8,14 +8,13 @@ buildscript {
         mavenCentral()
 
         maven { url 'https://jitpack.io' }
-        maven { url 'https://plugins.gradle.org/m2/' }
-
+        maven { url "https://plugins.gradle.org/m2/" }
         mavenLocal()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.4.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "firebase.test.lab:plugin:2.2.0"
+        classpath 'com.github.piotrmadry:FirebaseTestLab-Android:master-SNAPSHOT'
     }
 }
 
