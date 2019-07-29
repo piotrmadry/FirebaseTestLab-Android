@@ -525,7 +525,6 @@ private fun resolveAssemble(variant: TestVariant): Task = try {
 private fun resolveApk(variant: ApkVariant, baseVariantOutput: BaseVariantOutput): File =
     try {
         val applicationProvider = variant.packageApplicationProvider.get()
-        val filter = baseVariantOutput.filters.firstOrNull { it.filterType == VariantOutput.ABI }
         applicationProvider.let {
             var filename: String
             if (baseVariantOutput is ApkVariantOutput) {
