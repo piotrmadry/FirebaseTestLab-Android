@@ -20,3 +20,4 @@ gradle.properties
 
 # General
 .DS_Store
+/.gradle/

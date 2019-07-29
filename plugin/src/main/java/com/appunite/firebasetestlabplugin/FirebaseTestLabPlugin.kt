@@ -7,6 +7,7 @@ import com.android.build.gradle.TestedExtension
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariantOutput
+import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.appunite.firebasetestlabplugin.cloud.CloudTestResultDownloader
 import com.appunite.firebasetestlabplugin.cloud.FirebaseTestLabProcessCreator
@@ -524,7 +525,16 @@ private fun resolveAssemble(variant: TestVariant): Task = try {
 private fun resolveApk(variant: ApkVariant, baseVariantOutput: BaseVariantOutput): File =
     try {
         val applicationProvider = variant.packageApplicationProvider.get()
-        applicationProvider.let { File(it.outputDirectory, it.apkNames.toList()[0]) }
+        val filter = baseVariantOutput.filters.firstOrNull { it.filterType == VariantOutput.ABI }
+        applicationProvider.let {
+            var filename: String
+            if (baseVariantOutput is ApkVariantOutput) {
+                filename = baseVariantOutput.outputFileName
+            } else {
+                filename = it.apkNames.toList()[0]
+            }
+            File(it.outputDirectory, filename)
+        }
     } catch (e: Exception) {
         when (e) {
             is IllegalStateException, is IndexOutOfBoundsException -> baseVariantOutput.outputFile

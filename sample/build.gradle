@@ -14,7 +14,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:3.4.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.github.piotrmadry:FirebaseTestLab-Android:master-SNAPSHOT'
+        classpath 'firebase.test.lab:plugin:2.5.0'
     }
 }
 
