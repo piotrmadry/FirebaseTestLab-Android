@@ -1,6 +1,7 @@
 package com.appunite.firebasetestlabplugin
 
 import com.android.build.gradle.AppExtension
+import com.appunite.firebasetestlabplugin.cloud.FirebaseTestLabProcessCreator
 import junit.framework.TestCase.assertTrue
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -56,7 +57,7 @@ class ApplicationIntegrationTest {
     fun `run firebaseTestLabSetup install gcloud`() {
         val simpleProject = File(javaClass.getResource("simple").file)
         val project = prepareSimpleProject()
-	project.plugins.apply("firebase.test.lab")
+        project.plugins.apply("firebase.test.lab")
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
@@ -71,7 +72,7 @@ class ApplicationIntegrationTest {
     fun `ensure after evaluation tasks presented`() {
         val simpleProject = File(javaClass.getResource("simple").file)
         val project = prepareSimpleProject()
-	project.plugins.apply("firebase.test.lab")
+        project.plugins.apply("firebase.test.lab")
         project.configure<FirebaseTestLabPluginExtension> {
             googleProjectId = "test"
             keyFile = File(simpleProject, "key.json")
@@ -134,6 +135,13 @@ class ApplicationIntegrationTest {
         assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceX8664Debug", false).isNotEmpty())
         assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceArmeabiV7aDebug", false).isNotEmpty())
         assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceUniversalDebug", false).isNotEmpty())
+        val x86 = project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceX86Debug", false).first();
+        FirebaseTestLabProcessCreator.setExecutor({ processData ->
+            assertTrue("Unexpected app name ${processData.apk}",
+                    processData.apk.toString().contains("test-x86-debug.apk"))
+            ProcessBuilder("whoami").start()
+        })
+        x86.actions.forEach { it.execute(x86) }
     }
 
     @Test

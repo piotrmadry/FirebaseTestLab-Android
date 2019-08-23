@@ -23,7 +23,7 @@ data class ProcessData(
 ) : Serializable
 
 object FirebaseTestLabProcessCreator {
-
+    private var execute: (ProcessData) -> Process = { processData -> createProcess(processData).start() }
     private val resultMessageMap = mapOf(
             0 to "All test executions passed.",
             1 to "A general failure occurred. Possible causes include: a filename that does not exist, or an HTTP/network error.",
@@ -35,8 +35,12 @@ object FirebaseTestLabProcessCreator {
             20 to "A test infrastructure error occurred."
     )
 
+    fun setExecutor(executor: (ProcessData) -> Process) {
+        execute = executor
+    }
+
     fun callFirebaseTestLab(processData: ProcessData): TestResults {
-        val process: Process = createProcess(processData).start()
+        val process: Process = execute(processData)
         val resultCode: Int = process.let {
             it.errorStream.bufferedReader().forEachLine { errorInfo -> println(errorInfo) }
             it.inputStream.bufferedReader().forEachLine { info -> println(info) }
