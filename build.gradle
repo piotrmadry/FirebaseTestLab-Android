@@ -15,6 +15,12 @@ buildscript {
     }
 }
 
+def githubReleaseProperties = project.rootProject.file("githubRelease.properties")
+ext.githubReleaseProperties = new Properties()
+if(githubReleaseProperties.exists()) {
+    ext.githubReleaseProperties.load(githubReleaseProperties.newDataInputStream())
+}
+
 allprojects {
     repositories {
         google()

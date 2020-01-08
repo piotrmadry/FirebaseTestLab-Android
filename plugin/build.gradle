@@ -6,7 +6,7 @@ apply plugin: "com.gradle.plugin-publish"
 apply plugin: "org.gradle.kotlin.kotlin-dsl"
 
 group = "firebase.test.lab"
-version = "2.6.0"
+version = "2.7.0"
 
 gradlePlugin {
     plugins {
@@ -27,6 +27,19 @@ pluginBundle {
         FirebaseTestLabPlugin {
             id = "firebase.test.lab"
             displayName = "Gradle Firebase Test Lab Plugin"
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name "GitHubPackages"
+            url uri("https://maven.pkg.github.com/KaiaHealth/FirebaseTestLab-Android")
+            credentials {
+                username = project.rootProject.ext.githubReleaseProperties["username"] ?: ""
+                password = project.rootProject.ext.githubReleaseProperties["token"] ?: ""
+            }
         }
     }
 }
