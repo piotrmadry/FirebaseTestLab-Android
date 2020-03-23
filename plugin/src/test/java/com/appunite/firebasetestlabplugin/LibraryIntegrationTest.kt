@@ -1,11 +1,11 @@
 package com.appunite.firebasetestlabplugin
 
 import com.android.build.gradle.LibraryExtension
-import junit.framework.Assert.assertTrue
 import org.gradle.api.Project
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.kotlin.dsl.configure
 import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 

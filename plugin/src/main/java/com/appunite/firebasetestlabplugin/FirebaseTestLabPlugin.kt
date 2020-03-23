@@ -43,9 +43,11 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             isIgnoreExitValue = true
 
             doLast {
-                if (execResult.exitValue != 0) {
-                    println(standardOutput.toString())
-                    throw GradleException("exec failed; see output above")
+                execResult?.let {
+                    if (it.exitValue != 0) {
+                        println(standardOutput.toString())
+                        throw GradleException("exec failed; see output above")
+                    }
                 }
             }
         }
@@ -197,8 +199,8 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 CloudTestResultDownloader(
                         sdk,
                         resultsTypes,
-                        File(cloudDirectoryName),
-                        File(project.buildDir, cloudDirectoryName),
+                        File(cloudDirectoryName!!),
+                        File(project.buildDir, cloudDirectoryName!!),
                         cloudBucketName!!,
                         project.logger
                 )
@@ -526,13 +528,12 @@ private fun resolveApk(variant: ApkVariant, baseVariantOutput: BaseVariantOutput
     try {
         val applicationProvider = variant.packageApplicationProvider.get()
         applicationProvider.let {
-            var filename: String
-            if (baseVariantOutput is ApkVariantOutput) {
-                filename = baseVariantOutput.outputFileName
+            val filename = if (baseVariantOutput is ApkVariantOutput) {
+                baseVariantOutput.outputFileName
             } else {
-                filename = it.apkNames.toList()[0]
+                it.apkNames.toList()[0]
             }
-            File(it.outputDirectory, filename)
+            File(it.outputDirectory.get().asFile, filename)
         }
     } catch (e: Exception) {
         when (e) {
