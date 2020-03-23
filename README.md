@@ -23,7 +23,7 @@ Plugin for which integrates Firebase Test Lab with Android Project. Simplify run
 - Readability
 - Simplicity
 - Remote and Local Testing
-- Compatible with Gradle 3.0 
+- Compatible with Gradle 6.0
 - Instrumented Tests sharding for parallel test execution
 
 #### Setup 
