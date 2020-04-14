@@ -524,23 +524,11 @@ private fun resolveAssemble(variant: TestVariant): Task = try {
     variant.testedVariant.assemble
 }
 
-private fun resolveApk(variant: ApkVariant, baseVariantOutput: BaseVariantOutput): File =
-    try {
-        val applicationProvider = variant.packageApplicationProvider.get()
-        applicationProvider.let {
-            val filename = if (baseVariantOutput is ApkVariantOutput) {
-                baseVariantOutput.outputFileName
-            } else {
-                it.apkNames.toList()[0]
-            }
-            File(it.outputDirectory.get().asFile, filename)
-        }
-    } catch (e: Exception) {
-        when (e) {
-            is IllegalStateException, is IndexOutOfBoundsException -> baseVariantOutput.outputFile
-            else -> throw e
-        }
-    }
+private fun resolveApk(variant: ApkVariant, baseVariantOutput: BaseVariantOutput): File {
+    val applicationProvider = variant.packageApplicationProvider.orNull ?: return baseVariantOutput.outputFile
+    val fileName = (baseVariantOutput as? ApkVariantOutput)?.outputFileName ?: applicationProvider.apkNames.first() ?: return baseVariantOutput.outputFile
+    return File(applicationProvider.outputDirectory.get().asFile, fileName)
+}
 
 private fun resolveUnderTestApk(extension: FirebaseTestLabPlugin.ExtensionType, baseVariantOutput: BaseVariantOutput, blankApk: File): File =
     when (extension){
