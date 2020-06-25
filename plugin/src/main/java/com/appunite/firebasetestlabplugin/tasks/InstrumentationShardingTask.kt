@@ -3,6 +3,7 @@ package com.appunite.firebasetestlabplugin.tasks
 import com.appunite.firebasetestlabplugin.cloud.ProcessData
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.workers.WorkerConfiguration
 import org.gradle.workers.WorkerExecutor
@@ -11,7 +12,9 @@ import javax.inject.Inject
 
 open class InstrumentationShardingTask @Inject constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
     
+    @Internal
     lateinit var processData: ProcessData
+    @Internal
     lateinit var stateFile: File
     
     @TaskAction
