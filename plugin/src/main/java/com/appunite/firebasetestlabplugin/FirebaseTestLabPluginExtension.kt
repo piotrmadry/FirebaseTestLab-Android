@@ -23,8 +23,8 @@ open class FirebaseTestLabPluginExtension(private val project: Project) {
     val resultsTypes: ResultTypes = ResultTypes()
 
     fun createDevice(name: String, action: Device.() -> Unit): Device = devices.create(name, action)
-    fun devices(closure: Closure<Device>) {
-        devices.configure(closure)
+    fun devices(action: NamedDomainObjectContainer<Device>.() -> Unit) {
+        devices.action()
     }
 
     fun resultTypes(configure: ResultTypes.() -> Unit) {
