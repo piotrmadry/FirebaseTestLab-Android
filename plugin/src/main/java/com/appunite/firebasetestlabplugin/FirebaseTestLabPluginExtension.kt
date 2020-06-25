@@ -4,6 +4,7 @@ import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.ResultTypes
 import groovy.lang.Closure
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import java.io.File
 
