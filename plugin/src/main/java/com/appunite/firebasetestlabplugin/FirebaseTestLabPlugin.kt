@@ -531,7 +531,7 @@ private fun resolveApk(variant: ApkVariant, baseVariantOutput: BaseVariantOutput
             val filename = if (baseVariantOutput is ApkVariantOutput) {
                 baseVariantOutput.outputFileName
             } else {
-                it.apkNames.toList()[0]
+                it.name
             }
             File(it.outputDirectory.get().asFile, filename)
         }
