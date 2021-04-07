@@ -1,5 +1,5 @@
 # Firebase Test Lab Plugin for Android
-[![Plugin version badge](https://img.shields.io/static/v1.svg?label=plugin&message=2.6.0&color=blue)](https://plugins.gradle.org/plugin/firebase.test.lab)
+[![Plugin version badge](https://img.shields.io/static/v1.svg?label=plugin&message=2.6.2&color=blue)](https://plugins.gradle.org/plugin/firebase.test.lab)
 [![License](https://img.shields.io/crates/l/rustc-serialize.svg)](https://github.com/piotrmadry/FirebaseTestLab-Android/blob/master/LICENSE)
 
 ## Introduction
@@ -7,6 +7,7 @@ Plugin for which integrates Firebase Test Lab with Android Project. Simplify run
 
 ### Contributors
 - [Jacek Marchwicki](https://github.com/jacek-marchwicki)
+- [Zbynek Konieczny] (https://github.com/zbynek)
 
 #### Available features
 
