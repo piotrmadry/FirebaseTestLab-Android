@@ -219,7 +219,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
     
                     val extensionType: ExtensionType = when (androidExtension) {
                         is LibraryExtension -> ExtensionType.Library(testVariant)
-                        is AppExtension -> ExtensionType.Application(testVariant, androidExtension.applicationVariants.toList().firstOrNull { it.buildType == testVariant.buildType }!!)
+                        is AppExtension -> ExtensionType.Application(testVariant, androidExtension.applicationVariants.toList().firstOrNull { it.buildType == testVariant.buildType && it.flavorName == testVariant.flavorName }!!)
                         else -> throw IllegalStateException("Only application and library modules are supported")
                     }
                     
