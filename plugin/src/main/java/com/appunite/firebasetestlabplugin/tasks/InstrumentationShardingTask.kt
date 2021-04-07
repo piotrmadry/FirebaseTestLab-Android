@@ -21,11 +21,9 @@ open class InstrumentationShardingTask @Inject constructor(private val workerExe
     @TaskAction
     fun runAction() {
         (0 until processData.device.numShards).map { shardIndex ->
-            workerExecutor.submit(FirebaseTestLabProcess::class.java, object : Action<WorkerConfiguration> {
-                override fun execute(config: WorkerConfiguration) {
-                    config.params(processData.copy(shardIndex = shardIndex), stateFile)
-                }
-            })
+            workerExecutor.submit(FirebaseTestLabProcess::class.java) {
+                this.params(processData.copy(shardIndex = shardIndex), stateFile)
+            }
         }
     }
 }
