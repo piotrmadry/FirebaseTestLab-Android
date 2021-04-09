@@ -55,6 +55,7 @@ firebaseTestLab {
             // REQUIRED Choose at least one API level
             // you can list all available via `gcloud firebase test android models list` for your device model
             androidApiLevels = [23]
+            numShards = 4
 
             // You can test app in landscape and portrait
             // screenOrientations = [com.appunite.firebasetestlabplugin.model.ScreenOrientation.PORTRAIT, com.appunite.firebasetestlabplugin.model.ScreenOrientation.LANDSCAPE]

@@ -1,13 +1,12 @@
 package com.appunite.firebasetestlabplugin
 
-import com.android.build.VariantOutput
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.TestedExtension
 import com.android.build.gradle.api.ApkVariant
+import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariantOutput
-import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.appunite.firebasetestlabplugin.cloud.CloudTestResultDownloader
 import com.appunite.firebasetestlabplugin.cloud.FirebaseTestLabProcessCreator
@@ -32,7 +31,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.Serializable
-
 
 class FirebaseTestLabPlugin : Plugin<Project> {
 
@@ -194,7 +192,6 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 dependsOn(taskAuth)
             }
 
-
             val downloader: CloudTestResultDownloader? = if (cloudBucketName != null && cloudDirectoryName != null) {
                 CloudTestResultDownloader(
                         sdk,
@@ -265,10 +262,10 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
         val appVersions = combineAll(devices, extension.testVariant.testedVariant.outputs, ::DeviceAppMap)
                 .filter {
-                    val hasAbiSplits = it.apk.filterTypes.contains(VariantOutput.ABI)
+                    val hasAbiSplits = it.apk.filterTypes.contains(BaseVariantOutput.ABI)
                     if (hasAbiSplits) {
                         if (it.device.filterAbiSplits) {
-                            val abi = it.apk.filters.first { it.filterType == VariantOutput.ABI }.identifier
+                            val abi = it.apk.filters.first { it.filterType == BaseVariantOutput.ABI }.identifier
                             it.device.abiSplits.contains(abi)
                         } else {
                             true
