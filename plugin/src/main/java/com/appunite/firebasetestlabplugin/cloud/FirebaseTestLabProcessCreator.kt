@@ -1,7 +1,7 @@
 package com.appunite.firebasetestlabplugin.cloud
 
-import com.appunite.firebasetestlabplugin.FirebaseTestLabPlugin
 import com.appunite.firebasetestlabplugin.model.Device
+import com.appunite.firebasetestlabplugin.model.GoogleCloudSDK
 import com.appunite.firebasetestlabplugin.model.TestResults
 import com.appunite.firebasetestlabplugin.utils.joinArgs
 import java.io.File
@@ -13,7 +13,7 @@ sealed class TestType : Serializable {
 }
 
 data class ProcessData(
-    val sdk: FirebaseTestLabPlugin.Sdk,
+    val sdk: GoogleCloudSDK,
     val gCloudBucketName: String?,
     val gCloudDirectory: String?,
     val device: Device,

@@ -12,6 +12,7 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.gradle.kotlin:gradle-kotlin-dsl-plugins:1.4.9"
         classpath "com.gradle.publish:plugin-publish-plugin:0.14.0"
+        classpath 'com.android.tools.build:gradle:4.2.0-rc01'
     }
 }
 

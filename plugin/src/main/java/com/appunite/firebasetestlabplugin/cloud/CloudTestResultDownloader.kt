@@ -1,15 +1,14 @@
 package com.appunite.firebasetestlabplugin.cloud
 
-import com.appunite.firebasetestlabplugin.FirebaseTestLabPlugin
+import com.appunite.firebasetestlabplugin.model.GoogleCloudSDK
 import com.appunite.firebasetestlabplugin.model.ResultTypes
 import com.appunite.firebasetestlabplugin.utils.asCommand
 import org.gradle.api.GradleException
 import org.gradle.api.logging.Logger
 import java.io.File
 
-
 internal class CloudTestResultDownloader(
-        private val sdk: FirebaseTestLabPlugin.Sdk,
+        private val sdk: GoogleCloudSDK,
         private val resultsTypes: ResultTypes,
         private val gCloudDirectory: File,
         private val resultsPath: File,
