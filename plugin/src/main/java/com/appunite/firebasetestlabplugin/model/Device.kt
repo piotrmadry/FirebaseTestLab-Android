@@ -4,7 +4,7 @@ import java.io.Serializable
 
 class Device(val name: String) : Serializable {
     var locales: List<String> = listOf("en")
-    var screenOrientations: List<ScreenOrientation> = listOf(ScreenOrientation.PORTRAIT)
+    var screenOrientations: List<String> = listOf("portrait")
     var androidApiLevels: List<Int> = listOf()
     var deviceIds: List<String> = listOf()
     var timeout: Long = 0

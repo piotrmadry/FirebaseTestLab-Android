@@ -56,8 +56,9 @@ firebaseTestLab {
             // you can list all available via `gcloud firebase test android models list` for your device model
             androidApiLevels = [23]
 
-            // You can test app in landscape and portrait
-            // screenOrientations = [com.appunite.firebasetestlabplugin.model.ScreenOrientation.PORTRAIT, com.appunite.firebasetestlabplugin.model.ScreenOrientation.LANDSCAPE]
+            // You can test app in landscape, portrait and default
+            // More info in: https://cloud.google.com/sdk/gcloud/reference/firebase/test/android/run#--orientations
+            // screenOrientations = ["portrait", "landscape", "default"]
 
             // Choose language (default is `en`)
             // you can list all available via `gcloud firebase test android locales list`
