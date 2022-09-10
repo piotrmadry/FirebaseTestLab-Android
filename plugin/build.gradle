@@ -6,7 +6,7 @@ apply plugin: "com.gradle.plugin-publish"
 apply plugin: "org.gradle.kotlin.kotlin-dsl"
 
 group = "firebase.test.lab"
-version = "2.6.3"
+version = "2.6.4"
 
 pluginBundle {
     website = "https://github.com/piotrmadry/firebase-test-lab-gradle-plugin"
@@ -17,12 +17,31 @@ pluginBundle {
 gradlePlugin {
     plugins {
         FirebaseTestLabPlugin {
-            id = "firebase-test-lab"
+            id = "firebase.test.lab"
             displayName = "Firebase Test Lab Plugin"
             description = "Gradle plugin for Android Test Lab"
             implementationClass = "com.appunite.firebasetestlabplugin.FirebaseTestLabPlugin"
         }
     }
+}
+
+jar {
+    manifest {
+        attributes(
+                'Build-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSSZ"),
+                'Build-Revision': project.version,
+                'Built-By': 'piotrmadry',
+                'Created-By': "Gradle ${gradle.gradleVersion}",
+                'Build-Jdk': "${System.properties['java.version']} (${System.properties['java.vendor']} ${System.properties['java.vm.version']})",
+        )
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+    withJavadocJar()
+    withSourcesJar()
 }
 
 tasks {
