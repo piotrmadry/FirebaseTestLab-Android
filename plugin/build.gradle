@@ -8,25 +8,19 @@ apply plugin: "org.gradle.kotlin.kotlin-dsl"
 group = "firebase.test.lab"
 version = "2.6.2"
 
+pluginBundle {
+    website = "https://github.com/piotrmadry/firebase-test-lab-gradle-plugin"
+    vcsUrl = "https://github.com/piotrmadry/firebase-test-lab-gradle-plugin.git"
+    tags = ["firebase", "test-lab", "espresso", "instrumental-tests", "kotlin", "android"]
+}
+
 gradlePlugin {
     plugins {
         FirebaseTestLabPlugin {
             id = "firebase-test-lab"
+            displayName = "Firebase Test Lab Plugin"
+            description = "Gradle plugin for Android Test Lab"
             implementationClass = "com.appunite.firebasetestlabplugin.FirebaseTestLabPlugin"
-        }
-    }
-}
-
-pluginBundle {
-    website = "https://github.com/piotrmadry/firebase-test-lab-gradle-plugin"
-    vcsUrl = "https://github.com/piotrmadry/firebase-test-lab-gradle-plugin.git"
-    description = "Gradle plugin for Android Test Lab"
-    tags = ["firebase", "test-lab", "espresso", "instrumental-tests", "kotlin", "android"]
-
-    plugins {
-        FirebaseTestLabPlugin {
-            id = "firebase.test.lab"
-            displayName = "Gradle Firebase Test Lab Plugin"
         }
     }
 }
@@ -49,5 +43,5 @@ configurations.all {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation "com.android.tools.build:gradle:3.6.1"
-    testCompile "junit:junit-dep:4.11"
+    testImplementation "junit:junit-dep:4.4"
 }
