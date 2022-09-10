@@ -6,7 +6,7 @@ apply plugin: "com.gradle.plugin-publish"
 apply plugin: "org.gradle.kotlin.kotlin-dsl"
 
 group = "firebase.test.lab"
-version = "2.6.2"
+version = "2.6.3"
 
 pluginBundle {
     website = "https://github.com/piotrmadry/firebase-test-lab-gradle-plugin"
