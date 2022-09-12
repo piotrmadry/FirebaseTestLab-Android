@@ -9,12 +9,21 @@ import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.api.TestVariant
+import com.appunite.firebasetestlabplugin.Constants.ANDROID
+import com.appunite.firebasetestlabplugin.Constants.GRADLE_METHOD_NAME
+import com.appunite.firebasetestlabplugin.Constants.ensureGCloudSdk
+import com.appunite.firebasetestlabplugin.Constants.taskAuth
+import com.appunite.firebasetestlabplugin.Constants.taskPrefixDownload
+import com.appunite.firebasetestlabplugin.Constants.taskPrefixExecute
+import com.appunite.firebasetestlabplugin.Constants.taskSetProject
+import com.appunite.firebasetestlabplugin.Constants.taskSetup
 import com.appunite.firebasetestlabplugin.cloud.CloudTestResultDownloader
 import com.appunite.firebasetestlabplugin.cloud.FirebaseTestLabProcessCreator
 import com.appunite.firebasetestlabplugin.cloud.ProcessData
 import com.appunite.firebasetestlabplugin.cloud.TestType
 import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.TestResults
+import com.appunite.firebasetestlabplugin.tasks.HiddenExec
 import com.appunite.firebasetestlabplugin.tasks.InstrumentationShardingTask
 import com.appunite.firebasetestlabplugin.utils.Constants
 import org.apache.tools.ant.taskdefs.condition.Os
@@ -33,39 +42,8 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.Serializable
 
-
+private val BLANK_APK_RESOURCE = FirebaseTestLabPlugin::class.java.getResource(com.appunite.firebasetestlabplugin.Constants.BLANK_APK_RESOURCE_PATH)
 class FirebaseTestLabPlugin : Plugin<Project> {
-
-    open class HiddenExec : Exec() {
-        init {
-            standardOutput = ByteArrayOutputStream()
-            errorOutput = standardOutput
-            isIgnoreExitValue = true
-
-            doLast {
-                execResult?.let {
-                    if (it.exitValue != 0) {
-                        println(standardOutput.toString())
-                        throw GradleException("exec failed; see output above")
-                    }
-                }
-            }
-        }
-    }
-
-    companion object {
-        private const val GRADLE_METHOD_NAME = "firebaseTestLab"
-        private const val ANDROID = "android"
-        private const val ensureGCloudSdk = "firebaseTestLabEnsureGCloudSdk"
-        private const val taskAuth = "firebaseTestLabAuth"
-        private const val taskSetup = "firebaseTestLabSetup"
-        private const val taskSetProject = "firebaseTestLabSetProject"
-        private const val taskPrefixDownload = "firebaseTestLabDownload"
-        private const val taskPrefixExecute = "firebaseTestLabExecute"
-        private const val BLANK_APK_RESOURCE_PATH = "/blank.apk"
-
-        private val BLANK_APK_RESOURCE = FirebaseTestLabPlugin::class.java.getResource(BLANK_APK_RESOURCE_PATH)
-    }
 
     private lateinit var project: Project
 
