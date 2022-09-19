@@ -12,7 +12,7 @@ import java.io.ByteArrayOutputStream
 private const val SUCCESSFUL_EXEC_RESULT = 0
 private const val EXEC_RESULT_ERROR_MESSAGE = "Execution result failed. See output above."
 
-abstract class HiddenExec : Exec() {
+open class HiddenExec : Exec() {
     init {
         standardOutput = ByteArrayOutputStream()
         errorOutput = standardOutput

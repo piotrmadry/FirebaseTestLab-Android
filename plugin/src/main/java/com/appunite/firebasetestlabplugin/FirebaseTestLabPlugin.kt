@@ -4,15 +4,11 @@ import com.android.build.VariantOutput
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.TestedExtension
-import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.api.ApplicationVariant
-import com.android.build.gradle.api.BaseVariantOutput
-import com.android.build.gradle.api.ApkVariantOutput
-import com.android.build.gradle.api.TestVariant
+import com.android.build.gradle.api.*
 import com.appunite.firebasetestlabplugin.Constants.ANDROID
+import com.appunite.firebasetestlabplugin.Constants.ENSURE_GOOGLE_CLOUD_SDK_INSTALLED
 import com.appunite.firebasetestlabplugin.Constants.GRADLE_METHOD_NAME
-import com.appunite.firebasetestlabplugin.Constants.ensureGCloudSdk
-import com.appunite.firebasetestlabplugin.Constants.taskAuth
+import com.appunite.firebasetestlabplugin.Constants.ENSURE_GOOGLE_CLOUD_SDK_AUTHORIZED
 import com.appunite.firebasetestlabplugin.Constants.taskPrefixDownload
 import com.appunite.firebasetestlabplugin.Constants.taskPrefixExecute
 import com.appunite.firebasetestlabplugin.Constants.taskSetProject
@@ -23,26 +19,28 @@ import com.appunite.firebasetestlabplugin.cloud.ProcessData
 import com.appunite.firebasetestlabplugin.cloud.TestType
 import com.appunite.firebasetestlabplugin.model.Device
 import com.appunite.firebasetestlabplugin.model.TestResults
-import com.appunite.firebasetestlabplugin.tasks.HiddenExec
-import com.appunite.firebasetestlabplugin.tasks.InstrumentationShardingTask
-import com.appunite.firebasetestlabplugin.utils.Constants
+import com.appunite.firebasetestlabplugin.tasks.*
+import com.appunite.firebasetestlabplugin.utils.createTask
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.logging.LogLevel
-import org.gradle.api.tasks.Exec
 import org.gradle.kotlin.dsl.closureOf
 import org.gradle.kotlin.dsl.register
-import java.io.BufferedInputStream
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.Serializable
+import java.io.*
 
 private val BLANK_APK_RESOURCE = FirebaseTestLabPlugin::class.java.getResource(com.appunite.firebasetestlabplugin.Constants.BLANK_APK_RESOURCE_PATH)
+private const val DOWNLOAD_GOOGLE_CLOUD_SDK_TASK_DESCRIPTION =
+    "Ensures Google Cloud SDK is installed."
+private const val AUTHORIZE_GOOGLE_CLOUD_TASK_DESCRIPTION = "Ensures Google Cloud SDK authorized."
+private const val GOOGLE_CLOUD_SDK_INSTALLATION_FAILED_MESSAGE = "Google Cloud SDK download failed."
+
+private const val WINDOWS_NOT_SUPPORTED_MESSAGE =
+    "Fetching gcloud and gsutil is not supported on Windows. \n" +
+            "You need to install it manually. Look for instructions: https://cloud.google.com/sdk/downloads#windows .\n" +
+            "Than you need to set:\n " + "firebaseTestLab {\n" + "  cloudSdkPath = \"Xyz\"\n" + "}\n"
 class FirebaseTestLabPlugin : Plugin<Project> {
 
     private lateinit var project: Project
@@ -68,63 +66,63 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
     data class Sdk(val gcloud: File, val gsutil: File): Serializable
 
-    private fun createDownloadSdkTask(project: Project, cloudSdkPath: String?): Sdk =
-            if (cloudSdkPath != null) {
-                val sdkPath = File(cloudSdkPath)
-                val gcloud = File(sdkPath, Constants.GCLOUD)
-                val gsutil = File(sdkPath, Constants.GSUTIL)
-
-                project.tasks.register<Task>(ensureGCloudSdk) {
-                    group = Constants.FIREBASE_TEST_LAB
-                    description = "Check if google cloud sdk is installed"
-
-                    doFirst {
-                        if (!gcloud.exists()) {
-                            throw IllegalStateException("gcloud does not exist in path ${sdkPath.absoluteFile}, but downloading is not supported on Windows")
-                        }
-                        if (!gsutil.exists()) {
-                            throw IllegalStateException("gsutil does not exist in path ${sdkPath.absoluteFile}, but downloading is not supported on Windows")
-                        }
-                    }
-                }
-                Sdk(gcloud, gsutil)
-            } else {
-                val env = System.getenv("CLOUDSDK_INSTALL_DIR")
-                val installDir = when {
-                    !env.isNullOrEmpty() -> File(env)
-                    else -> File(project.buildDir, "gcloud")
-                }
-
-                project.logger.lifecycle("Google Cloud SDK installed at: $installDir")
-                val cloudSdkDir = File(installDir, "google-cloud-sdk")
-                val sdkPath = File(cloudSdkDir, "bin")
-
-                val gcloud = File(sdkPath, Constants.GCLOUD)
-                val gsutil = File(sdkPath, Constants.GSUTIL)
-
-                project.tasks.register<HiddenExec>(ensureGCloudSdk) {
-                    group = Constants.FIREBASE_TEST_LAB
-                    description = "Install google cloud SDK if necessary"
-
-                    outputs.files(gcloud, gsutil)
-                    doFirst {
-                        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                            throw IllegalStateException("Fetching gcloud and gsutil is not supported on Windows. " +
-                                    "You need to install it manually. Look for instructions: https://cloud.google.com/sdk/downloads#windows ." +
-                                    "Than you need to set:\n " +
-                                    "firebaseTestLab {\n" +
-                                    "  cloudSdkPath = \"Xyz\"\n" +
-                                    "}\n")
-                        }
-                    }
-                    commandLine = listOf("bash", "-c", "rm -r \"${cloudSdkDir.absolutePath}\";export CLOUDSDK_CORE_DISABLE_PROMPTS=1 && export CLOUDSDK_INSTALL_DIR=\"${installDir.absolutePath}\" && curl https://sdk.cloud.google.com | bash")
-                    doLast {
-                        if (!gcloud.exists()) throw IllegalStateException("Installation failed")
-                        if (!gsutil.exists()) throw IllegalStateException("Installation failed")
-                    }
-                }
-                Sdk(gcloud, gsutil)
-            }
+//    private fun createDownloadSdkTask(project: Project, cloudSdkPath: String?): Sdk =
+//            if (cloudSdkPath != null) {
+//                val sdkPath = File(cloudSdkPath)
+//                val gcloud = File(sdkPath, Constants.GCLOUD)
+//                val gsutil = File(sdkPath, Constants.GSUTIL)
+//
+//                project.tasks.register<Task>(ENSURE_GOOGLE_CLOUD_SDK_INSTALLED) {
+//                    group = Constants.FIREBASE_TEST_LAB
+//                    description = "Check if google cloud sdk is installed"
+//
+//                    doFirst {
+//                        if (!gcloud.exists()) {
+//                            throw IllegalStateException("gcloud does not exist in path ${sdkPath.absoluteFile}, but downloading is not supported on Windows")
+//                        }
+//                        if (!gsutil.exists()) {
+//                            throw IllegalStateException("gsutil does not exist in path ${sdkPath.absoluteFile}, but downloading is not supported on Windows")
+//                        }
+//                    }
+//                }
+//                Sdk(gcloud, gsutil)
+//            } else {
+//                val env = System.getenv("CLOUDSDK_INSTALL_DIR")
+//                val installDir = when {
+//                    !env.isNullOrEmpty() -> File(env)
+//                    else -> File(project.buildDir, "gcloud")
+//                }
+//
+////                project.logger.lifecycle("Google Cloud SDK installed at: $installDir")
+//                val cloudSdkDir = File(File(project.buildDir, "gcloud"), "google-cloud-sdk")
+//                val sdkPath = File(cloudSdkDir, "bin")
+//
+//                val gcloud = File(sdkPath, Constants.GCLOUD)
+//                val gsutil = File(sdkPath, Constants.GSUTIL)
+////
+//                project.tasks.register<HiddenExec>(ENSURE_GOOGLE_CLOUD_SDK_INSTALLED) {
+//                    group = Constants.FIREBASE_TEST_LAB
+//                    description = "Install google cloud SDK if necessary"
+//
+//                    outputs.files(gcloud, gsutil)
+//                    doFirst {
+//                        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+//                            throw IllegalStateException("Fetching gcloud and gsutil is not supported on Windows. " +
+//                                    "You need to install it manually. Look for instructions: https://cloud.google.com/sdk/downloads#windows ." +
+//                                    "Than you need to set:\n " +
+//                                    "firebaseTestLab {\n" +
+//                                    "  cloudSdkPath = \"Xyz\"\n" +
+//                                    "}\n")
+//                        }
+//                    }
+//                    commandLine = listOf("bash", "-c", "rm -r \"${cloudSdkDir.absolutePath}\";export CLOUDSDK_CORE_DISABLE_PROMPTS=1 && export CLOUDSDK_INSTALL_DIR=\"${installDir.absolutePath}\" && curl https://sdk.cloud.google.com | bash")
+//                    doLast {
+//                        if (!gcloud.exists()) throw IllegalStateException("Installation failed")
+//                        if (!gsutil.exists()) throw IllegalStateException("Installation failed")
+//                    }
+//                }
+//                Sdk(gcloud, gsutil)
+//            }
     
     sealed class ExtensionType(open val testVariant: TestVariant) {
         data class Library(override val testVariant: TestVariant) : ExtensionType(testVariant)
@@ -135,28 +133,36 @@ class FirebaseTestLabPlugin : Plugin<Project> {
         project.extensions.findByType(FirebaseTestLabPluginExtension::class.java)?.apply {
             val devices = devices.toList()
 
-            val sdk = createDownloadSdkTask(project, cloudSdkPath)
+            ensureGoogleCloudSdkInstalled(this)
+            ensureGoogleCloudSdkAuthorized()
 
-            project.tasks.register<HiddenExec>(taskAuth) {
-                group = Constants.FIREBASE_TEST_LAB
-                description = "Authorize google cloud sdk"
+            val cloudSdkDir = File(File(project.buildDir, "gcloud"), "google-cloud-sdk")
+            val sdkPath = File(cloudSdkDir, "bin")
 
-                dependsOn(ensureGCloudSdk)
-                val keyFile = keyFile
-                doFirst {
-                    if (keyFile == null) {
-                        throw GradleException("You need to set firebaseTestLab.keyFile = file(\"key-file.json\") before run")
-                    } else if (!keyFile.exists()) {
-                        throw GradleException("Key file (${keyFile.absolutePath} does not exists")
-                    }
-                }
-                commandLine = listOf(sdk.gcloud.absolutePath, "auth", "activate-service-account", "--key-file=${keyFile?.absolutePath}")
-            }
+            val gcloud = File(sdkPath, Constants.GCLOUD)
+            val gsutil = File(sdkPath, Constants.GSUTIL)
+            val sdk = Sdk(gcloud, gsutil)
+
+//            project.tasks.register<HiddenExec>(ENSURE_GOOGLE_CLOUD_SDK_AUTHORIZED) {
+//                group = Constants.FIREBASE_TEST_LAB
+//                description = "Authorize google cloud sdk"
+//
+//                dependsOn(ENSURE_GOOGLE_CLOUD_SDK_INSTALLED)
+//                val keyFile = keyFile
+//                doFirst {
+//                    if (keyFile == null) {
+//                        throw GradleException("You need to set firebaseTestLab.keyFile = file(\"test-lab-key.json\") before run")
+//                    } else if (!keyFile.exists()) {
+//                        throw GradleException("Key file (${keyFile.absolutePath} does not exists")
+//                    }
+//                }
+//                commandLine = listOf(sdk.gcloud.absolutePath, "auth", "activate-service-account", "--key-file=${keyFile?.absolutePath}")
+//            }
             project.tasks.register<HiddenExec>(taskSetProject) {
                 group = Constants.FIREBASE_TEST_LAB
                 description = "Configure google cloud sdk project"
 
-                dependsOn(ensureGCloudSdk)
+                dependsOn(ENSURE_GOOGLE_CLOUD_SDK_INSTALLED)
                 doFirst {
                     if (googleProjectId == null) {
                         throw GradleException("You need to set firebaseTestLab.googleProjectId before run")
@@ -169,7 +175,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 description = "Setup and configure google cloud sdk"
 
                 dependsOn(taskSetProject)
-                dependsOn(taskAuth)
+                dependsOn(ENSURE_GOOGLE_CLOUD_SDK_AUTHORIZED)
             }
 
 
@@ -205,6 +211,46 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 }
             }
         }
+    }
+
+    private fun ensureGoogleCloudSdkAuthorized() {
+        createTask<AuthorizeGoogleCloudSdk>(
+            project = project,
+            name = ENSURE_GOOGLE_CLOUD_SDK_AUTHORIZED
+        ) {
+            dependsOn(ENSURE_GOOGLE_CLOUD_SDK_INSTALLED)
+
+            group = Constants.FIREBASE_TEST_LAB
+            description = AUTHORIZE_GOOGLE_CLOUD_TASK_DESCRIPTION
+        }
+    }
+
+    private fun ensureGoogleCloudSdkInstalled(extension: FirebaseTestLabPluginExtension) {
+        //TODO: Move to download section, because it should be allowed when GC SDK installed manually
+        if (Os.isFamily(Os.FAMILY_WINDOWS))
+            throw IllegalStateException(WINDOWS_NOT_SUPPORTED_MESSAGE)
+
+        if (!extension.cloudSdkPath.isNullOrEmpty()) {
+            createTask<VerifyGoogleCloudSdkInstalledTask>(
+                project = project,
+                name = ENSURE_GOOGLE_CLOUD_SDK_INSTALLED
+            ) {
+                group = Constants.FIREBASE_TEST_LAB
+                description = DOWNLOAD_GOOGLE_CLOUD_SDK_TASK_DESCRIPTION
+            }
+        } else {
+            createTask<DownloadGoogleCloudSdkTask>(
+                project = project,
+                name = ENSURE_GOOGLE_CLOUD_SDK_INSTALLED
+            ) {
+                group = Constants.FIREBASE_TEST_LAB
+                description = DOWNLOAD_GOOGLE_CLOUD_SDK_TASK_DESCRIPTION
+            }
+        }
+    //TODO
+    //            if (!gcloud.exists() || !gsutil.exists()) throw IllegalStateException(
+    //                GOOGLE_CLOUD_SDK_INSTALLATION_FAILED_MESSAGE
+    //            )
     }
 
     data class DeviceAppMap(val device: Device, val apk: BaseVariantOutput)
