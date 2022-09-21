@@ -43,7 +43,7 @@ internal class CloudTestResultDownloader(
             excludeQuery.append("|.*\\.results$")
         }
         if (!resultsTypes.logcat) {
-            excludeQuery.append("|.*\\logcat$")
+            excludeQuery.append("|.*logcat$")
         }
         if (!resultsTypes.video) {
             excludeQuery.append("|.*\\.mp4$")
