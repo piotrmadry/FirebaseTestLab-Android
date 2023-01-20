@@ -325,4 +325,40 @@ class ApplicationIntegrationTest {
         
         assertTrue(project.getTasksByName("firebaseTestLabExecuteDebugInstrumentationMyDeviceDebug", false).isNotEmpty())
     }
+
+    @Test
+    fun `ensure tasks are created correctly for flavors`() {
+        val simpleProject = File(javaClass.getResource("simple").file)
+        val project = prepareSimpleProject()
+        project.plugins.apply("firebase.test.lab")
+        project.configure<AppExtension> {
+            flavorDimensions("auth", "logs")
+            productFlavors.apply {
+                create("google").also { it.dimension = "auth" }
+                create("facebook").also { it.dimension = "auth" }
+                create("splunk").also { it.dimension = "logs" }
+                create("firebase").also { it.dimension = "logs" }
+            }
+        }
+        project.configure<FirebaseTestLabPluginExtension> {
+            googleProjectId = "test"
+            keyFile = File(simpleProject, "key.json")
+            createDevice("myDevice") {
+                deviceIds = listOf("Nexus6")
+            }
+        }
+        (project as ProjectInternal).evaluate()
+
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteFacebookSplunkDebugInstrumentationMyDeviceFacebookSplunkDebug", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteFacebookFirebaseDebugInstrumentationMyDeviceFacebookFirebaseDebug", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteGoogleSplunkDebugInstrumentationMyDeviceGoogleSplunkDebug", false).isNotEmpty())
+        assertTrue(project.getTasksByName("firebaseTestLabExecuteGoogleFirebaseDebugInstrumentationMyDeviceGoogleFirebaseDebug", false).isNotEmpty())
+        val facebookSplunk = project.getTasksByName("firebaseTestLabExecuteFacebookFirebaseDebugInstrumentationMyDeviceFacebookFirebaseDebug", false).first();
+        FirebaseTestLabProcessCreator.setExecutor { processData ->
+            assertTrue("Unexpected app name ${processData.apk}",
+                    processData.apk.toString().contains("/facebookFirebase/debug/test-facebook-firebase-debug.apk"))
+            ProcessBuilder("whoami").start()
+        }
+        facebookSplunk.actions.forEach { it.execute(facebookSplunk) }
+    }
 }
