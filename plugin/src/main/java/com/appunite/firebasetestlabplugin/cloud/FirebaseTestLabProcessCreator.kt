@@ -63,7 +63,7 @@ object FirebaseTestLabProcessCreator {
                 "--app=${processData.apk}",
                 "--locales=${device.locales.joinArgs()}",
                 "--os-version-ids=${device.androidApiLevels.joinArgs()}",
-                "--orientations=${device.screenOrientations.map { orientation -> orientation.gcloudName }.joinArgs()}")
+                "--orientations=${device.screenOrientations.joinArgs()}")
                 .plus(when (processData.testType) {
                     TestType.Robo -> sequenceOf("--type=robo")
                     is TestType.Instrumentation -> sequenceOf("--type=instrumentation", "--test=${processData.testType.testApk}")
