@@ -6,7 +6,16 @@ apply plugin: "com.gradle.plugin-publish"
 apply plugin: "org.gradle.kotlin.kotlin-dsl"
 
 group = "firebase.test.lab"
-version = "2.6.4"
+version = "2.6.999.2"
+
+gradlePlugin {
+    plugins {
+        FirebaseTestLabPlugin {
+            id = "firebase-test-lab"
+            implementationClass = "com.appunite.firebasetestlabplugin.FirebaseTestLabPlugin"
+        }
+    }
+}
 
 pluginBundle {
     website = "https://github.com/piotrmadry/firebase-test-lab-gradle-plugin"
@@ -42,6 +51,19 @@ java {
     targetCompatibility = JavaVersion.VERSION_11
     withJavadocJar()
     withSourcesJar()
+}
+
+publishing {
+    repositories {
+        maven {
+            name "GitHubPackages"
+            url uri("https://maven.pkg.github.com/KaiaHealth/FirebaseTestLab-Android")
+            credentials {
+                username = project.rootProject.ext.githubReleaseProperties["username"] ?: ""
+                password = project.rootProject.ext.githubReleaseProperties["token"] ?: ""
+            }
+        }
+    }
 }
 
 tasks {
