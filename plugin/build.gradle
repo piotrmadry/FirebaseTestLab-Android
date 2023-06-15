@@ -83,6 +83,6 @@ configurations.all {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    implementation "com.android.tools.build:gradle:3.6.1"
+    implementation "com.android.tools.build:gradle:7.2.2"
     testImplementation "junit:junit-dep:4.4"
 }
