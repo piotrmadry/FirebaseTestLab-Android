@@ -3,12 +3,15 @@ package com.appunite.firebasetestlabplugin
 import com.android.build.VariantOutput
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.TestedAndroidConfig
 import com.android.build.gradle.TestedExtension
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.api.TestVariant
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.tasks.PackageAndroidArtifact
 import com.appunite.firebasetestlabplugin.cloud.CloudTestResultDownloader
 import com.appunite.firebasetestlabplugin.cloud.FirebaseTestLabProcessCreator
 import com.appunite.firebasetestlabplugin.cloud.ProcessData
@@ -43,8 +46,8 @@ class FirebaseTestLabPlugin : Plugin<Project> {
             isIgnoreExitValue = true
 
             doLast {
-                executionResult?.let {
-                    if (it.exitValue != 0) {
+                executionResult.let {
+                    if (it.get().exitValue != 0) {
                         println(standardOutput.toString())
                         throw GradleException("exec failed; see output above")
                     }
@@ -147,7 +150,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 }
                 Sdk(gcloud, gsutil)
             }
-    
+
     sealed class ExtensionType(open val testVariant: TestVariant) {
         data class Library(override val testVariant: TestVariant) : ExtensionType(testVariant)
         data class Application(override val testVariant: TestVariant, val appVariant: ApplicationVariant) : ExtensionType(testVariant)
@@ -214,15 +217,15 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
             val androidExtension: Any? = project.extensions.findByName(ANDROID)
 
-            (androidExtension as TestedExtension).apply {
+            (androidExtension as TestedAndroidConfig).run {
                 testVariants.toList().forEach { testVariant ->
-    
+
                     val extensionType: ExtensionType = when (androidExtension) {
                         is LibraryExtension -> ExtensionType.Library(testVariant)
                         is AppExtension -> ExtensionType.Application(testVariant, androidExtension.applicationVariants.toList().firstOrNull { it.buildType == testVariant.buildType && it.flavorName == testVariant.flavorName }!!)
                         else -> throw IllegalStateException("Only application and library modules are supported")
                     }
-                    
+
                     createGroupedTestLabTask(devices, extensionType, ignoreFailures, downloader, sdk, cloudBucketName, cloudDirectoryName)
                 }
             }
@@ -277,9 +280,9 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                         it.device.testUniversalApk
                     }
                 }
-        
+
         /* Not applicable for library module */
-        
+
         val roboTasks = if (extension is ExtensionType.Library) emptyList() else {
             appVersions
                 .map { test ->
@@ -302,7 +305,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                                 gCloudDirectory = cloudDirectoryName,
                                 device = test.device,
                                 apk = resolveUnderTestApk(extension, test.apk, blankApk),
-                        
+
                                 testType = TestType.Robo
                             ))
                             processResult(result, ignoreFailures)
@@ -345,7 +348,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                         }
                         dependsOn(taskSetup)
                         dependsOn(arrayOf(resolveAssemble(extension.testVariant), resolveTestAssemble(extension.testVariant)))
-                        
+
                         doFirst {
                             testResultFile.writeText("")
                         }
@@ -359,10 +362,10 @@ class FirebaseTestLabPlugin : Plugin<Project> {
 
                             logger.lifecycle("RESULTS_CODE: $testResults")
                             logger.lifecycle("When result code is equal to 0 means that all tests for all shards passed, otherwise some of them failed.")
-    
-    
+
+
                             processResult(testResults, ignoreFailures)
-                            
+
                         }
                     }
 
@@ -475,7 +478,7 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 throw GradleException("FAILURE: Tests failed.")
             }
         }
-    
+
     /**
      * This file is used for library testing, normally, for apps, two APK files are provided, one with app and second
      * with tests. In case of library modules we have AAR (library archive) and APK with tests but Test Lab is not
@@ -490,9 +493,9 @@ class FirebaseTestLabPlugin : Plugin<Project> {
                 throw IllegalStateException("Unable to create build dir ${project.buildDir}")
             }
         }
-        
+
         val blankApk = File(project.buildDir, "blank.apk")
-        
+
         if (!blankApk.exists()) {
             try {
                 BufferedInputStream(BLANK_APK_RESOURCE.openStream()).use { inputStream ->
@@ -525,8 +528,10 @@ private fun resolveAssemble(variant: TestVariant): Task = try {
 }
 
 private fun resolveApk(variant: ApkVariant, baseVariantOutput: BaseVariantOutput): File {
-    val applicationProvider = variant.packageApplicationProvider.orNull ?: return baseVariantOutput.outputFile
-    val fileName = (baseVariantOutput as? ApkVariantOutput)?.outputFileName ?: applicationProvider.apkNames.first() ?: return baseVariantOutput.outputFile
+    val applicationProvider: PackageAndroidArtifact = variant.packageApplicationProvider.orNull ?: return baseVariantOutput.outputFile
+    // TODO check if we need applicationProvider.apkNames.first() as it is not recognized anymore
+//    val fileName = (baseVariantOutput as? ApkVariantOutput)?.outputFileName ?: applicationProvider.apkNames.first() ?: return baseVariantOutput.outputFile
+    val fileName = (baseVariantOutput as? ApkVariantOutput)?.outputFileName ?: return baseVariantOutput.outputFile
     return File(applicationProvider.outputDirectory.get().asFile, fileName)
 }
 
